@@ -1,0 +1,6 @@
+https://www.zhinst.com/en/resources/principles-of-pid-controllers
+https://chat.openai.com/share/7d000d0e-5ca0-4143-92fe-0423d3ad7790
+https://codepal.ai/code-generator/query/2GSNZEic/arduino-pcr-function
+https://gist.github.com/100ideas/1120142
+https://pastebin.com/6dA4BjUx
+https://fdossena.com/?p=ArduinoFanControl/i.md
