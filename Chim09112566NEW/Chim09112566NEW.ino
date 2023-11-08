@@ -119,20 +119,20 @@ if (currentSetpoint == ""){
     
     unsigned long TimeSet1 = 120000; //2 min
     static unsigned long readTime1 = 0;
-    if (currentSetpoint == warm_step && millis() - readTime1 >= TimeSet1) {
+    if (Input == warm_step && currentSetpoint == warm_step && millis() - readTime1 >= TimeSet1) {
       readTime1 = millis();
       currentSetpoint = rt_step;
     }
   } 
   unsigned long TimeSet2 = 60000; //1 sec
   static unsigned long readTime2 = 0;
-  else if(currentSetpoint == rt_step && millis() - readTime2 >= TimeSet2){
+  else if(Input == rt_step && currentSetpoint == rt_step && millis() - readTime2 >= TimeSet2){
     readTime2 = millis();
     currentSetpoint = initial_denature_step;
   } 
   unsigned long TimeSet3 = 60000; //1 sec
   static unsigned long readTime3 = 0;
-  else if(currentSetpoint == initial_denature_step && millis() - readTime3 >= TimeSet3){
+  else if(Input == initial_denature_step &&  currentSetpoint == initial_denature_step && millis() - readTime3 >= TimeSet3){
     readTime3 = millis();
     currentSetpoint = denature_step;
   } 
@@ -157,7 +157,7 @@ if (currentSetpoint == ""){
 void RunTemp() {
   if (Input >= currentSetpoint) {
     myPID.Compute();
-    analogWrite(peltierPin, Output);
+    analogWrite(peltierPin, Output); //00000
     analogWrite(fanPin, 0);
   } else {
     myPID.Compute();
