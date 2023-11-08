@@ -67,9 +67,6 @@ void loop() {
     Input = max31855temp - 5;                       // MAX31855 (-5 = correction value)
   }
 
-  // Compute PID control
-  myPID.Compute();
-
   //Serial print every 1 sec
   unsigned long readTimeSet = 1000;
   static unsigned long readTime = 0;
@@ -114,33 +111,30 @@ void loop() {
     u8g.print(cycle);
   } while (u8g.nextPage());
 ///////////////////////////////////////
-  if (currentSetpoint == ""){
-    currentSetpoint = warm_step;
-    myPID.Compute();
-    analogWrite(peltierPin, Output);
-    analogWrite(fanPin, 0);
 
+RunTemp();
+
+if (currentSetpoint == ""){
+    currentSetpoint = warm_step;
+    
     unsigned long TimeSet1 = 120000; //2 min
     static unsigned long readTime1 = 0;
     if (currentSetpoint == warm_step && millis() - readTime1 >= TimeSet1) {
       readTime1 = millis();
-      currentSetpoint = rt_step; //ย้ายไปใส่ rtStep();**************************
-      rtStep();
+      currentSetpoint = rt_step;
     }
   } 
-  unsigned long TimeSet2 = 60000; //2 min
+  unsigned long TimeSet2 = 60000; //1 sec
   static unsigned long readTime2 = 0;
   else if(currentSetpoint == rt_step && millis() - readTime2 >= TimeSet2){
     readTime2 = millis();
     currentSetpoint = initial_denature_step;
-    InitialDenature();
   } 
-  unsigned long TimeSet3 = 60000; //2 min
+  unsigned long TimeSet3 = 60000; //1 sec
   static unsigned long readTime3 = 0;
   else if(currentSetpoint == initial_denature_step && millis() - readTime3 >= TimeSet3){
     readTime3 = millis();
     currentSetpoint = denature_step;
-    denatureStep();
   } 
   
   else if(currentSetpoint == denature_step && millis() - readTime1 >= TimeSet1){
@@ -160,76 +154,14 @@ void loop() {
 }
 
 // ประกาศฟังก์ชัน
-void rtStep() {
+void RunTemp() {
   if (Input >= currentSetpoint) {
-    analogWrite(peltierPin, 0);
+    myPID.Compute();
+    analogWrite(peltierPin, Output);
     analogWrite(fanPin, 0);
   } else {
     myPID.Compute();
     analogWrite(peltierPin, Output);
     analogWrite(fanPin, 255);
-    stage = 1;
-  }
-}
-
-// ประกาศฟังก์ชัน
-void InitialDenature() {
-  if (Input >= currentSetpoint) {
-    analogWrite(peltierPin, 0);
-    analogWrite(fanPin, 0);
-  } else {
-    myPID.Compute();
-    analogWrite(peltierPin, Output);
-    analogWrite(fanPin, 255);
-    stage = 2;
-  }
-}
-// ประกาศฟังก์ชัน
-void denatureStep() {
-  if (Input >= currentSetpoint) {
-    analogWrite(peltierPin, 0);
-    analogWrite(fanPin, 0);
-  } else {
-    myPID.Compute();
-    analogWrite(peltierPin, Output);
-    analogWrite(fanPin, 255);
-    stage = 3;
-  }
-}
-// ประกาศฟังก์ชัน
-void annealingStep() {
-  if (Input >= currentSetpoint) {
-    analogWrite(peltierPin, 0);
-    analogWrite(fanPin, 0);
-  } else {
-    myPID.Compute();
-    analogWrite(peltierPin, Output);
-    analogWrite(fanPin, 255);
-    stage = 4;
-  }
-}
-// ประกาศฟังก์ชัน
-void extentionStep() {
-  if (Input >= currentSetpoint) {
-    analogWrite(peltierPin, 0);
-    analogWrite(fanPin, 0);
-  } else {
-    myPID.Compute();
-    analogWrite(peltierPin, Output);
-    analogWrite(fanPin, 255);
-    stage = 5;
-    cycle++;
-  }
-}
-// ประกาศฟังก์ชัน
-void coolingStep() {
-  if (Input >= currentSetpoint) {
-    analogWrite(peltierPin, 0);
-    analogWrite(fanPin, 0);
-  } else {
-    myPID.Compute();
-    analogWrite(peltierPin, Output);
-    analogWrite(fanPin, 255);
-    stage = 6;
   }
 }
