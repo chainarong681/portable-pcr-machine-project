@@ -97,26 +97,7 @@ void loop() {
     if (Input >= currentSetpoint) {
     analogWrite(peltierPin, 0);
     analogWrite(fanPin, 0);
-
-    if (currentSetpoint == denature && currentMillis - previousMillis >= setpoint1Interval) {
-      currentSetpoint = annealing;
-      previousMillis = currentMillis;
-      //myPID.Setpoint(currentSetpoint);
-      stage=2;
-    } else if (currentSetpoint == annealing && currentMillis - previousMillis >= setpoint2Interval) {
-      currentSetpoint = extension;
-      previousMillis = currentMillis;
-      //myPID.Setpoint(currentSetpoint);
-      stage=3;
-    } else if (currentSetpoint == extension && currentMillis - previousMillis >= setpoint3Interval) {
-      currentSetpoint = denature;
-      previousMillis = currentMillis;
-      //myPID.Setpoint(currentSetpoint);
-      stage=1;
-      cycle++;
-    }
   } else {
-    myPID.Compute();
     analogWrite(peltierPin, Output);
     analogWrite(fanPin, 255);
   }
