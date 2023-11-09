@@ -1,4 +1,4 @@
-นี่คือโค้ด Arduino ที่ควบคุมอุณหภูมิด้วย PID จาก Peltier โดยใช้ `millis()` แทน `delay()` เพื่อควบคุมการรอเวลา และมีการวนรอบจำนวน 35 รอบตามที่คุณร้องขอ โดยใช้ switch case และไม่ใช้การเก็บค่าในอาร์เรย์:
+jjนี่คือโค้ด Arduino ที่ควบคุมอุณหภูมิด้วย PID จาก Peltier โดยใช้ `millis()` แทน `delay()` เพื่อควบคุมการรอเวลา และมีการวนรอบจำนวน 35 รอบตามที่คุณร้องขอ โดยใช้ switch case และไม่ใช้การเก็บค่าในอาร์เรย์:
 
 ```arduino
 #include <PID_v1.h>
@@ -92,3 +92,31 @@ void loop() {
 ```
 
 ในโค้ดนี้ เราใช้ `millis()` เพื่อควบคุมระยะเวลาแทน `delay()` เพื่อทำให้โค้ดไม่ต้องรอในระหว่างการทำงานแต่ละสถานะของ switch case และเมื่อ `interval` ครบระยะเวลาที่กำหนดแล้วเรากลับสู่สถานะถัดไป และนับจำนวนรอบ `roundCount` เพื่อหยุดการทำงานหลักเมื่อครบ 35 รอบ.
+
+
+    if (Input >= currentSetpoint) {
+    analogWrite(peltierPin, 0);
+    analogWrite(fanPin, 0);
+
+    if (currentSetpoint == denature && currentMillis - previousMillis >= setpoint1Interval) {
+      currentSetpoint = annealing;
+      previousMillis = currentMillis;
+      //myPID.Setpoint(currentSetpoint);
+      stage=2;
+    } else if (currentSetpoint == annealing && currentMillis - previousMillis >= setpoint2Interval) {
+      currentSetpoint = extension;
+      previousMillis = currentMillis;
+      //myPID.Setpoint(currentSetpoint);
+      stage=3;
+    } else if (currentSetpoint == extension && currentMillis - previousMillis >= setpoint3Interval) {
+      currentSetpoint = denature;
+      previousMillis = currentMillis;
+      //myPID.Setpoint(currentSetpoint);
+      stage=1;
+      cycle++;
+    }
+  } else {
+    myPID.Compute();
+    analogWrite(peltierPin, Output);
+    analogWrite(fanPin, 255);
+  }
