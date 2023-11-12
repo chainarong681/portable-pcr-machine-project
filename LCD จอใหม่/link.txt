@@ -1,2 +1,0 @@
-https://www.arduinoecia.com.br/display-grafico-lcd-128x64-st7920-arduino/
-U8GLIB_ST7920_128X64_1X u8g(6, 5, 4 ,7); //Enable, RW, RS, RESET 
