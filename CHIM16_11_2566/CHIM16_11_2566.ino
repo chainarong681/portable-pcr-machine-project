@@ -273,10 +273,10 @@ void runInstrument(){
 //Protect >=99
 if ((Input >= Setpoint) || (Input >= 99)) {
     analogWrite(peltierPin, Output); //ปรกติจะเท่ากับ 0
-    analogWrite(fanPin, 255);
+    analogWrite(fanPin, 0);
   } else {
     analogWrite(peltierPin, Output);
-    analogWrite(fanPin, 0);
+    analogWrite(fanPin, 255);
   }
 }
 
