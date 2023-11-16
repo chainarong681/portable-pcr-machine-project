@@ -277,6 +277,9 @@ if ((Input >= Setpoint) || (Input >= 99)) {
   } else {
     analogWrite(peltierPin, Output);
     analogWrite(fanPin, 0);
+// ทดลองเปลี่ยนพัดลมตัวใหม่ให้แรงขึ้น
+//ตอนลดให้หมุน 255
+//ตอนเพิ่มอุณหภูมิให้หมุนช้าๆ 50
   }
 }
 
