@@ -104,8 +104,8 @@ void loop() {
       //แก้ EXTENTION_TEMP และ FINAL_EXTENTION_TEMP = -2.5
       Input -= 2.5;
     } else if (Input >= 80 && Input <= 100) {
-      //แก้  INITIAL_DENATURE_TEMP และ DENATURE_TEMP  = -6
-      Input -= 6;
+      //แก้  INITIAL_DENATURE_TEMP และ DENATURE_TEMP  = -4 เดิม -6
+      Input -= 4;
     }
   }
 
