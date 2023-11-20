@@ -309,7 +309,7 @@ if ((Input >= Setpoint) || (Input >= 105)) {
     analogWrite(fanPin, 80); //ปรกติ 80
   } else {
     analogWrite(peltierPin, Output);
-    analogWrite(fanPin, 200); //ทดสอบที่ความเร็วครึ่งนึง
+    analogWrite(fanPin, 128); //ทดสอบที่ความเร็วครึ่งนึง
   }
 }
 
@@ -318,10 +318,10 @@ void runInstrument_Extention(){
 //Protect >=105
 if ((Input >= Setpoint) || (Input >= 105)) {
     analogWrite(peltierPin, 0); //ปรกติจะเท่ากับ 0
-    analogWrite(fanPin, 40); //ปรกติ 40
+    analogWrite(fanPin, 80); //ปรกติ 80
   } else {
     analogWrite(peltierPin, Output);
-    analogWrite(fanPin, 120); //ทดสอบที่ความเร็วครึ่งนึง
+    analogWrite(fanPin, 128); //ทดสอบที่ความเร็วครึ่งนึง
   }
 }
 
@@ -337,7 +337,7 @@ if ((Input >= Setpoint) || (Input >= 105)) {
     }
   } else {
     analogWrite(peltierPin, Output);
-    analogWrite(fanPin, 200); //ทดสอบที่ความเร็วครึ่งนึง
+    analogWrite(fanPin, 128); //ทดสอบที่ความเร็วครึ่งนึง
   }
 }
 
