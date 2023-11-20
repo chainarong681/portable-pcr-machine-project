@@ -95,8 +95,8 @@ void loop() {
       //แก้ WARM_TEMP = -0.5
       Input -= 0.5;
     } else if (Input >= 45 && Input < 55) {
-      //แก้  RT_TEMP = -1.5
-      Input -= 1.5;
+      //แก้  RT_TEMP = -1
+      Input -= 1;
     } else if (Input >= 55 && Input < 65) {
       //แก้  ANNEALING_TEMP = -1
       Input -= 1;
