@@ -147,8 +147,10 @@ void loop() {
       u8g.drawStr(0, 50, "cycle"); //draw vertical position
       u8g.setPrintPos(80, 50); //draw horizontal
       u8g.print(NUMBER_CYCLE);
+      u8g.print(" / ");
+      u8g.print(SET_CYCLE);
 
-      u8g.drawStr(0, 60, "Time/Delay step"); //draw vertical position
+      u8g.drawStr(0, 60, "Time/Delay-step"); //draw vertical position
       u8g.setPrintPos(82, 60); //draw horizontal
       u8g.print(TIME_COUNT);
       u8g.print(" / ");
@@ -165,10 +167,6 @@ void loop() {
 
 void instrumentRun() {
   //PCR control
-  //ที่ 95 องศาเซลเซียสค่าแก้ เท่ากับ 0
-  //ที่ 50 องศาเซลเซียสค่าแก้ เท่ากับ 0
-  //ที่ 72 องศาเซลเซียสค่าแก้ เท่ากับ 0
-
   switch (STAGE) {
     case 1:
       Setpoint = WARM_TEMP;
