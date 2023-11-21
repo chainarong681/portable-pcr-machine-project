@@ -346,7 +346,7 @@ void stadyState() {
   const long intervalStadyState = 1000;
   unsigned long currentMillisStadyState = millis();
 
-  if ((Input <= Setpoint + 0.5) && (Input >= Setpoint - 0.5)) {
+  if ((Input <= Setpoint + 0.25) && (Input >= Setpoint - 0.25)) {
     if (currentMillisStadyState - previousStadyState >= intervalStadyState) {
       measurementsCount++;
       previousStadyState = currentMillisStadyState;
@@ -364,7 +364,7 @@ void stadyState_anneling() {
   const long intervalStadyState = 1000;
   unsigned long currentMillisStadyState = millis();
 
-  if ((Input <= Setpoint + 0.5) && (Input >= Setpoint - 0.5)) {
+  if ((Input <= Setpoint + 0.25) && (Input >= Setpoint - 0.25)) {
     if (currentMillisStadyState - previousStadyState >= intervalStadyState) {
       measurementsCount++;
       previousStadyState = currentMillisStadyState;
