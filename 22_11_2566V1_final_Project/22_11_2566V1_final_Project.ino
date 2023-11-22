@@ -351,9 +351,9 @@ void stadyState() {
       measurementsCount++;
       previousStadyStateD = currentMillisStadyStateD;
 
-      if (measurementsCount >= 12) { //ให้ค่าเข่าใกล้ค่าคงที่มากที่สุดก่อนเพื่อจะเริ่มจับเวลา
+      if (measurementsCount >= 15) { //ให้ค่าเข่าใกล้ค่าคงที่มากที่สุดก่อนเพื่อจะเริ่มจับเวลา
         STATUS_CHECK = true;
-        measurementsCount = 0; // รีเซ็ต measurementsCount เมื่อครบ 12 ครั้ง ใช้เวลาเพิ่ม 12 วินาที
+        measurementsCount = 0; // รีเซ็ต measurementsCount เมื่อครบ 15 ครั้ง ใช้เวลาเพิ่ม 15 วินาที
       }
     }
   }
