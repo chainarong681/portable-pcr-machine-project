@@ -28,13 +28,13 @@ double ANNEALING_TEMP = 55.0; // Desired setpoint temperatures in Celsius
 double EXTENTION_TEMP = 72.0; // Desired setpoint temperatures in Celsius
 double FINAL_EXTENTION_TEMP = 72.0; // Desired setpoint temperatures in Celsius
 //Time วินาที
-int WARM_TEMP_TIME = 60; //120
-int RT_TEMP_TIME = 0; //1800
-int INITIAL_DENATURE_TIME = 120; //120
-int DENATURE_TEMP_TIME = 30; //15
-int ANNEALING_TEMP_TIME = 45; //45
-int EXTENTION_TEMP_TIME = 90; //45
-int COOLING_TEMP_TIME = 420; //420
+int WARM_TEMP_TIME = 60;
+int RT_TEMP_TIME = 0; 
+int INITIAL_DENATURE_TIME = 120; 
+int DENATURE_TEMP_TIME = 30; 
+int ANNEALING_TEMP_TIME = 45; 
+int EXTENTION_TEMP_TIME = 45; 
+int COOLING_TEMP_TIME = 420; 
 
 // Define variables to keep track of cycle and stage and Other
 int NUMBER_CYCLE =0;
