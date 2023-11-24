@@ -4,4 +4,5 @@ Analytik Jena รุ่น FlexCycer2
 #####################################
 Projec ATOM
 ทำการทดสอบการ amplify จำนวน 35 cycle
-ใช้เวลา 3 ชม. 30 นาที
+ใช้เวลา 3 ชม. 30 นาที เฉลี่ย ramp rate มีค่าเมื่อเปรียบเทียบ
+โดยใช้ค่าของ analytik jena ได้ ramp rate เท่ากับ 3 C/S
