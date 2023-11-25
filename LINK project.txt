@@ -4,3 +4,5 @@ https://codepal.ai/code-generator/query/2GSNZEic/arduino-pcr-function
 https://gist.github.com/100ideas/1120142
 https://pastebin.com/6dA4BjUx
 https://fdossena.com/?p=ArduinoFanControl/i.md
+//////////////////////ESP8266////////////////////////
+https://randomnerdtutorials.com/install-esp8266-filesystem-uploader-arduino-ide/
