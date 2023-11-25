@@ -1,0 +1,68 @@
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <WebServer.h>
+
+const char *ssid = "ESP32-AccessPoint"; // ชื่อของ Access Point
+const char *password = "12345678";       // รหัสผ่านของ Access Point
+
+IPAddress local_ip(192, 168, 1, 1); // IP Address ของ ESP32
+IPAddress gateway(192, 168, 1, 1);   // Gateway
+IPAddress subnet(255, 255, 255, 0);   // Subnet Mask
+
+WebServer server(80);
+
+const int led = 13;
+
+void handleRoot()
+{
+  digitalWrite(led, 1);
+  server.send(200, "text/plain", "hello from esp32!");
+  digitalWrite(led, 0);
+}
+
+void handleNotFound()
+{
+  digitalWrite(led, 1);
+  String message = "File Not Found\n\n";
+  message += "URI: ";
+  message += server.uri();
+  message += "\nMethod: ";
+  message += (server.method() == HTTP_GET) ? "GET" : "POST";
+  message += "\nArguments: ";
+  message += server.args();
+  message += "\n";
+  for (uint8_t i = 0; i < server.args(); i++)
+  {
+    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+  }
+  server.send(404, "text/plain", message);
+  digitalWrite(led, 0);
+}
+
+void setup(void)
+{
+  pinMode(led, OUTPUT);
+  digitalWrite(led, 0);
+  Serial.begin(115200);
+
+  // Set up Access Point
+  WiFi.softAP(ssid, password);
+  WiFi.softAPConfig(local_ip, gateway, subnet);
+  delay(100);
+
+  Serial.println("");
+  Serial.print("Access Point IP address: ");
+  Serial.println(WiFi.softAPIP());
+
+  server.on("/", handleRoot);
+  server.onNotFound(handleNotFound);
+
+  server.begin();
+  Serial.println("HTTP server started");
+}
+
+void loop(void)
+{
+  server.handleClient();
+  delay(2); //allow the cpu to switch to other tasks
+}
