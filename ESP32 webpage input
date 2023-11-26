@@ -1,0 +1,123 @@
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <WebServer.h>
+#include <ESPmDNS.h>
+
+const char *ssid = "Project_nano";        // ชื่อของ Access Point
+const char *password = "123456789";       // รหัสผ่านของ Access Point
+
+IPAddress apIP(192, 168, 1, 5);
+IPAddress gatewayIP(192, 168, 1, 1);
+IPAddress subnetIP(255, 255, 255, 0);
+
+WebServer server(80);
+
+void handleRoot() {
+  String html = "<html><body>";
+  html += "<h1 style=\"color:blue;\">Project nano</h1>";
+  html += "<h2 style=\"color:black;\">This project was developed by Mr. Chainarong Kulchim (medical scientist) </h2>";
+  html += "<h2 style=\"color:black;\">Veterinary Research and Development Center Lower Northern Region</h2>";
+  html += "<h2 style=\"color:black;\">9 Moo.15 Phitsanulok-Lomsak road Wangthong Phitsanulok 65130</h2>";
+  html += "<h2 style=\"color:black;\">Tel. 0805040716</h2>";
+
+  // เพิ่มขนาดและเปลี่ยนสีปุ่ม
+  html += "<button style=\"font-size: 30px; background-color: lightgreen;\" onclick=\"goToSecondPage()\">Run program</button>  ";
+  html += "<button style=\"font-size: 30px; background-color: lightyellow;\" onclick=\"goToThirdPage()\">Setting program</button>  ";
+  html += "<button style=\"font-size: 30px; background-color: lightpink;\" onclick=\"goToFourthPage()\">Calibration</button>";
+
+  html += "<script>function goToSecondPage() { window.location.href = '/second'; }</script>";
+  html += "<script>function goToThirdPage() { window.location.href = '/third'; }</script>";
+  html += "<script>function goToFourthPage() { window.location.href = '/Fourth'; }</script>";
+  html += "</body></html>";
+
+  server.send(200, "text/html", html);
+}
+
+void handleSecondPage() {
+  String html = "<html><body>";
+  html += "<h1>22222222222222222222</h1>";
+  html += "</body></html>";
+
+  server.send(200, "text/html", html);
+}
+
+void handleThirdPage() {
+  String html = "<html><body>";
+  html += "<h1>Amplification method setting:</h1>";
+  // เพิ่ม dropdown
+  html += "<label for='methods'>Choose a methode: </label>";
+  html += "<select name='methods' id='methods'>";
+  html += "<option value='37'>Recombinase Polymerase Amplification(37 'C)</option>";
+  html += "<option value='42'>Recombinase Polymerase Amplification(42 'C)</option>";
+  html += "<option value='60'>Loop-mediated isothermal amplification(60 'C)</option>";
+  html += "<option value='65'>Loop-mediated isothermal amplification(65 'C)</option>";
+  html += "</select><br><br>";
+    // เพิ่ม dropdown
+  html += "<label for='time'>Choose a time: </label>";
+  html += "<select name='time' id='time'>";
+  html += "<option value='30'>30 min</option>";
+  html += "<option value='60'>60 min</option>";
+  html += "<option value='90'>90 min</option>";
+  html += "</select><br><br>";
+  html += "<input type='submit' value='Submit'>";
+  html += "</form>";
+
+  html += "</body></html>";
+
+  server.send(200, "text/html", html);
+}
+
+void handleFormSubmit() {
+  String selectedMethod = server.arg("methods");
+  String selectedTime = server.arg("time");
+  // ดำเนินการต่อไปตามต้องการ
+  // ตัวอย่าง: นำข้อมูลไปใช้งานหรือบันทึกลง EEPROM
+
+  // ประกาศตัวแปร response
+  String response;
+  response += "Choose a methode: " + selectedMethod + "<br>";
+  response += "Choose a time: " + selectedTime + "<br>";
+
+  server.send(200, "text/html", response);
+}
+
+void handleFourthPage() {
+  String html = "<html><body>";
+  html += "<h1>Temperature calibration:</h1>";
+    // เพิ่มฟอร์ม input ข้อมูล
+  html += "<form action='/submit' method='post'>";
+  html += "<label for='correction'>Temp correction ('C): </label>";
+  html += "<input type='text' id='tempC' name='tempC'><br><br>";
+  html += "<input type='submit' value='Submit'>";
+  html += "</form>";
+  html += "</body></html>";
+
+  server.send(200, "text/html", html);
+}
+
+void setup(void) {
+  Serial.begin(115200);
+
+  // เปิด Access Point
+  WiFi.softAP(ssid, password);
+  delay(100);
+
+  // ตั้งค่า IP, Gateway, และ Subnet
+  WiFi.softAPConfig(apIP, gatewayIP, subnetIP);
+
+  Serial.println("Access Point IP address: " + WiFi.softAPIP().toString());
+
+  server.on("/", HTTP_GET, handleRoot);
+  server.on("/second", HTTP_GET, handleSecondPage);
+  server.on("/third", HTTP_GET, handleThirdPage);
+  server.on("/Fourth", HTTP_GET, handleFourthPage);
+
+  // เริ่ม WebServer
+  server.begin();
+
+  Serial.println("HTTP server started");
+}
+
+void loop(void) {
+  server.handleClient();
+}
