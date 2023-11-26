@@ -45,7 +45,9 @@ void handleRoot() {
 
 void handleSecondPage() {
   String html = "<html><body>";
-  html += "<h1>22222222222222222222</h1>";
+  html += "<button style='font-size: 30px; background-color: lightgreen;' onclick='goToRoot()'>Back</button>";
+  html += "<h1>Project NANO Run:</h1>";
+  html += "<script>function goToRoot() { window.location.href = '/'; }</script>";
   html += "</body></html>";
 
   server.send(200, "text/html", html);
@@ -76,8 +78,6 @@ void handleThirdPage() {
 
   server.send(200, "text/html", html);
 }
-
-
 
 void handleThirdPageSubmit() {
   String method = server.arg("methods");
@@ -114,20 +114,66 @@ void handleThirdPageSubmit() {
   server.send(200, "text/html", html);
 }
 
-
 void handleFourthPage() {
   String html = "<html><body>";
-  html += "<h1>Temperature calibration:</h1>";
+  html += "<button style='font-size: 30px; background-color: lightgreen;' onclick='goToRoot()'>Back</button>";
+  html += "<h1 style='font-size: 24px;'>Temperature calibration:</h1>";
     // เพิ่มฟอร์ม input ข้อมูล
-  html += "<form action='/submit' method='post'>";
-  html += "<label for='correction'>Temp correction ('C): </label>";
-  html += "<input type='text' id='tempC' name='tempC'><br><br>";
-  html += "<input type='submit' value='Submit'>";
+  html += "<form action='/submitFourth' method='post' onsubmit='return validateForm()'>";
+  html += "<label for='tempC' style='font-size: 24px;'>Temp correction ('C): </label>";
+  html += "<input type='text' id='tempC' name='tempC' style='font-size: 24px;' required><br><br>";
+  html += "<input type='submit' value='Submit' style='font-size: 20px; width: 100px; height: 30px; background-color: yellow;'>";
   html += "</form>";
+
+  html += "<script>";
+  html += "function validateForm() {";
+  html += "  var tempCValue = document.getElementById('tempC').value;";
+  html += "  if (!tempCValue || isNaN(tempCValue)) {";
+  html += "    alert('Please enter a valid numeric value for Temp correction.');";
+  html += "    return false;";
+  html += "  }";
+  html += "}";
+  html += "</script>";
+
+
+  html += "<script>function goToRoot() { window.location.href = '/'; }</script>";
   html += "</body></html>";
 
   server.send(200, "text/html", html);
 }
+
+void handleFourthPageSubmit() {
+  String tempC = server.arg("tempC");
+
+  // Assuming you have enough space in EEPROM for the tempC string
+  writeStringToEEPROM(100, tempC);
+
+  // Print the saved value to Serial
+  Serial.println("Temp Correction: " + tempC);
+
+  // Assuming you have some condition to determine success or failure
+  bool success = true; // Change this based on your actual condition
+
+  String message;
+  String color;
+
+  if (success) {
+    message = "Temperature correction saved successfully";
+    color = "green";
+  } else {
+    message = "Failed to save data";
+    color = "red";
+  }
+
+  String html = "<html><body>";
+  html += "<h1 style='color:" + color + "'>" + message + "</h1>";
+  html += "<button style='font-size: 30px; background-color: lightgreen;' onclick='goToFourthPage()'>Back</button>";
+  html += "<script>function goToFourthPage() { window.location.href = '/Fourth'; }</script>";
+  html += "</body></html>";
+
+  server.send(200, "text/html", html);
+}
+
 
 void setup(void) {
   Serial.begin(115200);
@@ -143,7 +189,10 @@ void setup(void) {
   server.on("/second", HTTP_GET, handleSecondPage);
   server.on("/third", HTTP_GET, handleThirdPage);
   server.on("/submit", HTTP_POST, handleThirdPageSubmit); // New route for form submission
+
   server.on("/Fourth", HTTP_GET, handleFourthPage);
+  server.on("/submitFourth", HTTP_POST, handleFourthPageSubmit);
+
 
   server.begin();
 
