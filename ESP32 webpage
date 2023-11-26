@@ -1,0 +1,57 @@
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <WebServer.h>
+#include <ESPmDNS.h>
+
+const char *ssid = "Project_nano";        // ชื่อของ Access Point
+const char *password = "123456789";       // รหัสผ่านของ Access Point
+
+IPAddress apIP(192, 168, 1, 5);
+IPAddress gatewayIP(192, 168, 1, 1);
+IPAddress subnetIP(255, 255, 255, 0);
+
+WebServer server(80);
+
+void handleRoot() {
+  String html = "<html><body>";
+  html += "<h1>Hello, world!</h1>";
+  html += "<button onclick=\"goToSecondPage()\">Click me</button>";
+  html += "<script>function goToSecondPage() { window.location.href = '/second'; }</script>";
+  html += "</body></html>";
+
+  server.send(200, "text/html", html);
+}
+
+
+void handleSecondPage() {
+  String html = "<html><body>";
+  html += "<h1>Welcome to the second page!</h1>";
+  html += "</body></html>";
+
+  server.send(200, "text/html", html);
+}
+
+void setup(void) {
+  Serial.begin(115200);
+
+  // เปิด Access Point
+  WiFi.softAP(ssid, password);
+  delay(100);
+
+  // ตั้งค่า IP, Gateway, และ Subnet
+  WiFi.softAPConfig(apIP, gatewayIP, subnetIP);
+
+  Serial.println("Access Point IP address: " + WiFi.softAPIP().toString());
+
+  server.on("/", HTTP_GET, handleRoot);
+  server.on("/second", HTTP_GET, handleSecondPage);
+
+  // เริ่ม WebServer
+  server.begin();
+
+  Serial.println("HTTP server started");
+}
+
+void loop(void) {
+  server.handleClient();
+}
