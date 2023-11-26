@@ -28,7 +28,7 @@ void handleRoot() {
   html += "<h2 style=\"color:black;\">This project was developed by Mr. Chainarong Kulchim (medical scientist) </h2>";
   html += "<h2 style=\"color:black;\">Veterinary Research and Development Center Lower Northern Region</h2>";
   html += "<h2 style=\"color:black;\">9 Moo.15 Phitsanulok-Lomsak road Wangthong Phitsanulok 65130</h2>";
-  html += "<h2 style=\"color:black;\">Tel. 0805040716 email: chainarong681@gmail.com</h2>";
+  html += "<h2 style=\"color:black;\">Email: chainarong681@gmail.com Tel.0805040716</h2>";
 
   // เพิ่มขนาดและเปลี่ยนสีปุ่ม
   html += "<button style=\"font-size: 30px; background-color: lightgreen;\" onclick=\"goToSecondPage()\">Run program</button>  ";
@@ -47,10 +47,32 @@ void handleSecondPage() {
   String html = "<html><body>";
   html += "<button style='font-size: 30px; background-color: lightgreen;' onclick='goToRoot()'>Back</button>";
   html += "<h1>Project NANO Run:</h1>";
+
+  // Read values from EEPROM
+  String method = readStringFromEEPROM(0);
+  String time = readStringFromEEPROM(method.length() + 1);
+  String tempC = readStringFromEEPROM(100);
+
+  html += "<p>Method: " + method + "</p>";
+  html += "<p>Time: " + time + "</p>";
+  html += "<p>Temp Correction: " + tempC + "</p>";
+
   html += "<script>function goToRoot() { window.location.href = '/'; }</script>";
   html += "</body></html>";
 
   server.send(200, "text/html", html);
+}
+
+// Function to read a string from EEPROM
+String readStringFromEEPROM(int addr) {
+  String result = "";
+  char ch = EEPROM.read(addr);
+  while (ch != '\0') {
+    result += ch;
+    addr++;
+    ch = EEPROM.read(addr);
+  }
+  return result;
 }
 
 void handleThirdPage() {
