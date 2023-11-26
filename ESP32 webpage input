@@ -20,6 +20,9 @@ void writeStringToEEPROM(int addr, const String &str) {
   }
   EEPROM.write(addr + str.length(), '\0'); // Null-terminate the string
   EEPROM.commit();
+
+  Serial.print("Data written to EEPROM: ");
+  Serial.println(str);
 }
 
 void handleRoot() {
