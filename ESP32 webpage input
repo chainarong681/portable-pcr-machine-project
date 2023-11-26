@@ -2,15 +2,25 @@
 #include <WiFiClient.h>
 #include <WebServer.h>
 #include <ESPmDNS.h>
+#include <EEPROM.h>
 
-const char *ssid = "Project_nano";        // ชื่อของ Access Point
-const char *password = "123456789";       // รหัสผ่านของ Access Point
+const char *ssid = "Project_nano";
+const char *password = "123456789";
 
 IPAddress apIP(192, 168, 1, 5);
 IPAddress gatewayIP(192, 168, 1, 1);
 IPAddress subnetIP(255, 255, 255, 0);
 
 WebServer server(80);
+
+// Function to write a string to EEPROM
+void writeStringToEEPROM(int addr, const String &str) {
+  for (size_t i = 0; i < str.length(); i++) {
+    EEPROM.write(addr + i, str[i]);
+  }
+  EEPROM.write(addr + str.length(), '\0'); // Null-terminate the string
+  EEPROM.commit();
+}
 
 void handleRoot() {
   String html = "<html><body>";
@@ -44,15 +54,14 @@ void handleSecondPage() {
 void handleThirdPage() {
   String html = "<html><body>";
   html += "<h1>Amplification method setting:</h1>";
-  // เพิ่ม dropdown
-  html += "<label for='methods'>Choose a methode: </label>";
+  html += "<form action='/submit' method='post'>";
+  html += "<label for='methods'>Choose a method: </label>";
   html += "<select name='methods' id='methods'>";
   html += "<option value='37'>Recombinase Polymerase Amplification(37 'C)</option>";
   html += "<option value='42'>Recombinase Polymerase Amplification(42 'C)</option>";
   html += "<option value='60'>Loop-mediated isothermal amplification(60 'C)</option>";
   html += "<option value='65'>Loop-mediated isothermal amplification(65 'C)</option>";
   html += "</select><br><br>";
-    // เพิ่ม dropdown
   html += "<label for='time'>Choose a time: </label>";
   html += "<select name='time' id='time'>";
   html += "<option value='30'>30 min</option>";
@@ -61,24 +70,24 @@ void handleThirdPage() {
   html += "</select><br><br>";
   html += "<input type='submit' value='Submit'>";
   html += "</form>";
-
   html += "</body></html>";
 
   server.send(200, "text/html", html);
 }
 
-void handleFormSubmit() {
-  String selectedMethod = server.arg("methods");
-  String selectedTime = server.arg("time");
-  // ดำเนินการต่อไปตามต้องการ
-  // ตัวอย่าง: นำข้อมูลไปใช้งานหรือบันทึกลง EEPROM
+void handleThirdPageSubmit() {
+  String method = server.arg("methods");
+  String time = server.arg("time");
 
-  // ประกาศตัวแปร response
-  String response;
-  response += "Choose a methode: " + selectedMethod + "<br>";
-  response += "Choose a time: " + selectedTime + "<br>";
+  // Assuming you have enough space in EEPROM for the method and time strings
+  writeStringToEEPROM(0, method);
+  writeStringToEEPROM(method.length() + 1, time);
 
-  server.send(200, "text/html", response);
+  // Print the saved values to Serial
+  Serial.println("Method: " + method);
+  Serial.println("Time: " + time);
+
+  server.send(200, "text/plain", "Data saved to EEPROM");
 }
 
 void handleFourthPage() {
@@ -98,11 +107,9 @@ void handleFourthPage() {
 void setup(void) {
   Serial.begin(115200);
 
-  // เปิด Access Point
   WiFi.softAP(ssid, password);
   delay(100);
 
-  // ตั้งค่า IP, Gateway, และ Subnet
   WiFi.softAPConfig(apIP, gatewayIP, subnetIP);
 
   Serial.println("Access Point IP address: " + WiFi.softAPIP().toString());
@@ -110,9 +117,9 @@ void setup(void) {
   server.on("/", HTTP_GET, handleRoot);
   server.on("/second", HTTP_GET, handleSecondPage);
   server.on("/third", HTTP_GET, handleThirdPage);
+  server.on("/submit", HTTP_POST, handleThirdPageSubmit); // New route for form submission
   server.on("/Fourth", HTTP_GET, handleFourthPage);
 
-  // เริ่ม WebServer
   server.begin();
 
   Serial.println("HTTP server started");
