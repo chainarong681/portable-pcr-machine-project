@@ -19,7 +19,19 @@ void writeStringToEEPROM(int addr, const String &str) {
     EEPROM.write(addr + i, str[i]);
   }
   EEPROM.write(addr + str.length(), '\0'); // Null-terminate the string
-  EEPROM.commit();
+  EEPROM.commit(); // Commit changes to EEPROM
+}
+
+// Function to read a string from EEPROM
+String readStringFromEEPROM(int addr) {
+  String result = "";
+  char ch = EEPROM.read(addr);
+  while (ch != '\0') {
+    result += ch;
+    addr++;
+    ch = EEPROM.read(addr);
+  }
+  return result;
 }
 
 void handleRoot() {
@@ -50,8 +62,8 @@ void handleSecondPage() {
 
   // Read values from EEPROM
   String method = readStringFromEEPROM(0);
-  String time = readStringFromEEPROM(method.length() + 1);
-  String tempC = readStringFromEEPROM(100);
+  String time = readStringFromEEPROM(5);
+  String tempC = readStringFromEEPROM(10);
 
   html += "<p>Method: " + method + "</p>";
   html += "<p>Time: " + time + "</p>";
@@ -61,18 +73,6 @@ void handleSecondPage() {
   html += "</body></html>";
 
   server.send(200, "text/html", html);
-}
-
-// Function to read a string from EEPROM
-String readStringFromEEPROM(int addr) {
-  String result = "";
-  char ch = EEPROM.read(addr);
-  while (ch != '\0') {
-    result += ch;
-    addr++;
-    ch = EEPROM.read(addr);
-  }
-  return result;
 }
 
 void handleThirdPage() {
@@ -107,7 +107,7 @@ void handleThirdPageSubmit() {
 
   // Assuming you have enough space in EEPROM for the method and time strings
   writeStringToEEPROM(0, method);
-  writeStringToEEPROM(method.length() + 1, time);
+  writeStringToEEPROM(5, time);
 
   // Print the saved values to Serial
   Serial.println("Method: " + method);
@@ -168,7 +168,7 @@ void handleFourthPageSubmit() {
   String tempC = server.arg("tempC");
 
   // Assuming you have enough space in EEPROM for the tempC string
-  writeStringToEEPROM(100, tempC);
+  writeStringToEEPROM(10, tempC);
 
   // Print the saved value to Serial
   Serial.println("Temp Correction: " + tempC);
@@ -207,6 +207,8 @@ void setup(void) {
 
   Serial.println("Access Point IP address: " + WiFi.softAPIP().toString());
 
+  EEPROM.begin(512);  // Begin with EEPROM size
+
   server.on("/", HTTP_GET, handleRoot);
   server.on("/second", HTTP_GET, handleSecondPage);
   server.on("/third", HTTP_GET, handleThirdPage);
@@ -223,4 +225,21 @@ void setup(void) {
 
 void loop(void) {
   server.handleClient();
+
+  // Print values from EEPROM to Serial
+  printValuesFromEEPROM();
+  // Add a delay if needed to control the frequency of printing
+  delay(1000);  // Adjust the delay time as needed
+}
+
+void printValuesFromEEPROM() {
+  // Read values from EEPROM
+  String method = readStringFromEEPROM(0);
+  String time = readStringFromEEPROM(5);
+  String tempC = readStringFromEEPROM(10);
+
+  // Print values to Serial
+  Serial.println("Method: " + method);
+  Serial.println("Time: " + time);
+  Serial.println("Temp Correction: " + tempC);
 }
