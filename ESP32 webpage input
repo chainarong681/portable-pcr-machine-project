@@ -197,7 +197,7 @@ void handleFourthPageSubmit() {
 }
 
 
-void setup(void) {
+void setup() {
   Serial.begin(115200);
 
   WiFi.softAP(ssid, password);
@@ -223,7 +223,7 @@ void setup(void) {
   Serial.println("HTTP server started");
 }
 
-void loop(void) {
+void loop() {
   server.handleClient();
 
   // Print values from EEPROM to Serial
