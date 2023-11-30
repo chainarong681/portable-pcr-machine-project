@@ -10,6 +10,9 @@
 
 U8G2_ST7920_128X64_F_SW_SPI u8g2(U8G2_R0, /* clock=*/ 18, /* data=*/ 23, /* CS=*/ 5, /* reset=*/ 22); // ESP32
 
+//loading bar
+int boxlong = 0;
+
 void setup(void) {
   u8g2.begin();
 
@@ -31,7 +34,10 @@ void setup(void) {
 
   } while (u8g2.nextPage());
   delay(5000); // รอ 1 วินาที
+
+  //หน้าสอง
   Page2();
+  delay(5000); // รอ 1 วินาที
 }
 
 void Page2(void) {
@@ -62,7 +68,35 @@ void Page2(void) {
   } while (u8g2.nextPage());
 }
 
+//Loading Bar
+void draw_box(u8g2_uint_t x, u8g2_uint_t y, u8g2_uint_t width, u8g2_uint_t height) {
+    u8g2.drawBox(x, y, width, height);
+}
+
+void draw_loading_bar(u8g2_uint_t boxlong) {
+    u8g2.firstPage();
+    do {
+
+        u8g2.setFont(u8g2_font_luBS08_te); // Use a bold font, you can choose a different one if needed
+        // Set the position to display "Project NANO" on the screen
+        int x = 28; // X coordinate
+        int y = 20; // Y coordinate
+        u8g2.drawStr(x, y, "please wait");
+        // Draw loading bar based on the value of boxlong
+        draw_box(10, 27, boxlong, 10);
+    } while (u8g2.nextPage());
+    //delay(30);
+}
+
 void loop(void) {
-  
+  //Loading bar
+    if (boxlong < 108) {
+        draw_loading_bar(boxlong);
+        boxlong += 1;  // Increase boxlong or update it based on your logic
+    } else {
+        // Call Menu_select() or do something else when boxlong is greater than or equal to 108
+        
+    }
+ 
 }
 
