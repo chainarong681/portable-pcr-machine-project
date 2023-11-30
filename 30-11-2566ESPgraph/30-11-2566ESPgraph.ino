@@ -30,6 +30,14 @@ U8G2_ST7920_128X64_F_SW_SPI u8g2(U8G2_R0, /* clock=*/ 18, /* data=*/ 23, /* CS=*
 //loading bar
 int boxlong = 0;
 
+//Read temp
+float READTEMP;
+
+//อ่าน EEPROM เก็บเพื่ใช้เป็นค่า setting
+float methodRUN;
+float timeRUN;
+float temCRUN;
+
 /////////////////////////////////WIFI//////////////////////////////////////
 // Function to write a string to EEPROM
 void writeStringToEEPROM(int addr, const String &str) {
@@ -215,10 +223,6 @@ void handleFourthPageSubmit() {
 }
 /////////////////////////////////WIFI//////////////////////////////////////
 
-/////////////////////////////////LCD//////////////////////////////////////
-
-/////////////////////////////////LCD//////////////////////////////////////
-
 void setup(void) {
   //wifi
   Serial.begin(115200);
@@ -247,6 +251,10 @@ void setup(void) {
 
   //LCD
   u8g2.begin();
+
+  // กลับจอ 180 องศา
+  u8g2.setDisplayRotation(U8G2_R2);
+
   //หน้าแรก
   u8g2.firstPage();
   do {
@@ -271,6 +279,7 @@ void setup(void) {
   delay(5000); // รอ 1 วินาที
 }
 
+/////////////////////////////////LCD//////////////////////////////////////
 void Page2(void) {
   u8g2.firstPage();
   do {
@@ -319,7 +328,10 @@ void draw_loading_bar(u8g2_uint_t boxlong) {
     //delay(30);
 }
 
+/////////////////////////////////LCD//////////////////////////////////////
 void loop(void) {
+  //ทดสอบ random ค่า
+  READTEMP = random(300, 660) / 10.0;
 
   //LCD
   //Loading bar
@@ -327,11 +339,43 @@ void loop(void) {
         draw_loading_bar(boxlong);
         boxlong += 20;  // Increase boxlong or update it based on your logic
     } else {
-        // Call Menu_select() or do something else when boxlong is greater than or equal to 108
-          //WIFI
-  server.handleClient();
+        //WIFI
+        server.handleClient();
+
+        //Run program
+        Run();
         
     }
  
 }
 
+void Run(){
+  u8g2.firstPage();
+  do {
+    u8g2.drawFrame(0, 0, 128, 64);
+    u8g2.setDrawColor(1); // 1 for solid color
+    u8g2.setFont(u8g2_font_resoledbold_tr); // Use a bold font, you can choose a different one if needed
+    // Set the position to display "Project NANO" on the screen
+    int a = 2; // X coordinate
+    int b = 9; // Y coordinate
+    u8g2.drawStr(a, b, "Read:");
+    int c = 32; // X coordinate
+    int d = 9; // Y coordinate
+    u8g2.setCursor(c, d);
+    u8g2.print(READTEMP, 2);
+    // Set the position to display "Project NANO" on the screen
+    int e = 62; // X coordinate
+    int f = 9; // Y coordinate
+    u8g2.drawStr(e, f, "/ ");
+    int g = 72; // X coordinate
+    int h = 9; // Y coordinate
+    u8g2.setCursor(g, h);
+    u8g2.print(methodRUN, 2);
+
+
+
+
+
+  } while (u8g2.nextPage());
+
+}
