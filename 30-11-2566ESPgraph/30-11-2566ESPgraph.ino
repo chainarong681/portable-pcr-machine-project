@@ -25,7 +25,7 @@ WebServer server(80);
 #include <Wire.h>
 #endif
 
-U8G2_ST7920_128X64_F_SW_SPI u8g2(U8G2_R0, /* clock=*/ 18, /* data=*/ 23, /* CS=*/ 5, /* reset=*/ 22); // ESP32
+U8G2_ST7920_128X64_F_SW_SPI u8g2(U8G2_R0, /* clock=*/18, /* data=*/23, /* CS=*/5, /* reset=*/22);  // ESP32
 
 //loading bar
 int boxlong = 0;
@@ -38,14 +38,31 @@ float methodRUN;
 float timeRUN;
 float temCRUN;
 
+//สถานะการทำงาน
+int State_Run = 0;
+
+//เก็บค่าสร้างกราฟ
+float s_val[108];  ////////เก็บค่า 100 ค่า
+
+//ประกาศตัวแปรเป็น global เพื่อเก็บค่าไว้ไม่ให้ reset จากการวนloop
+unsigned long last_time = 0;
+unsigned long period = 1000 * 60;  //ระยะเวลาที่ต้องการรอ 1 นาที 
+int TIME_COUNT = 0;
+
+//Set Line graph
+const int HEIGHT=64;
+const int LENGTH=108;
+int x;
+int y[LENGTH];
+
 /////////////////////////////////WIFI//////////////////////////////////////
 // Function to write a string to EEPROM
 void writeStringToEEPROM(int addr, const String &str) {
   for (size_t i = 0; i < str.length(); i++) {
     EEPROM.write(addr + i, str[i]);
   }
-  EEPROM.write(addr + str.length(), '\0'); // Null-terminate the string
-  EEPROM.commit(); // Commit changes to EEPROM
+  EEPROM.write(addr + str.length(), '\0');  // Null-terminate the string
+  EEPROM.commit();                          // Commit changes to EEPROM
 }
 
 // Function to read a string from EEPROM
@@ -140,7 +157,7 @@ void handleThirdPageSubmit() {
   Serial.println("Time: " + time);
 
   // Assuming you have some condition to determine success or failure
-  bool success = true; // Change this based on your actual condition
+  bool success = true;  // Change this based on your actual condition
 
   String message;
   String color;
@@ -166,7 +183,7 @@ void handleFourthPage() {
   String html = "<html><body>";
   html += "<button style='font-size: 30px; background-color: lightgreen;' onclick='goToRoot()'>Back</button>";
   html += "<h1 style='font-size: 24px;'>Temperature calibration:</h1>";
-    // เพิ่มฟอร์ม input ข้อมูล
+  // เพิ่มฟอร์ม input ข้อมูล
   html += "<form action='/submitFourth' method='post' onsubmit='return validateForm()'>";
   html += "<label for='tempC' style='font-size: 24px;'>Temp correction ('C): </label>";
   html += "<input type='text' id='tempC' name='tempC' style='font-size: 24px;' required><br><br>";
@@ -200,7 +217,7 @@ void handleFourthPageSubmit() {
   Serial.println("Temp Correction: " + tempC);
 
   // Assuming you have some condition to determine success or failure
-  bool success = true; // Change this based on your actual condition
+  bool success = true;  // Change this based on your actual condition
 
   String message;
   String color;
@@ -239,7 +256,7 @@ void setup(void) {
   server.on("/", HTTP_GET, handleRoot);
   server.on("/second", HTTP_GET, handleSecondPage);
   server.on("/third", HTTP_GET, handleThirdPage);
-  server.on("/submit", HTTP_POST, handleThirdPageSubmit); // New route for form submission
+  server.on("/submit", HTTP_POST, handleThirdPageSubmit);  // New route for form submission
 
   server.on("/Fourth", HTTP_GET, handleFourthPage);
   server.on("/submitFourth", HTTP_POST, handleFourthPageSubmit);
@@ -260,23 +277,23 @@ void setup(void) {
   do {
     u8g2.drawFrame(0, 0, 128, 64);
 
-    u8g2.setDrawColor(1); // 1 for solid color
-    u8g2.setFont(u8g2_font_crox4tb_tf); // Use a bold font, you can choose a different one if needed
+    u8g2.setDrawColor(1);                // 1 for solid color
+    u8g2.setFont(u8g2_font_crox4tb_tf);  // Use a bold font, you can choose a different one if needed
 
     // Set the position to display "Project NANO" on the screen
-    int x = 2; // X coordinate
-    int y = 30; // Y coordinate
+    int x = 2;   // X coordinate
+    int y = 30;  // Y coordinate
     u8g2.drawStr(x, y, "Project NANO");
-    int i = 45; // X coordinate
-    int z = 50; // Y coordinate
+    int i = 45;  // X coordinate
+    int z = 50;  // Y coordinate
     u8g2.drawStr(i, z, "v0.1");
 
   } while (u8g2.nextPage());
-  delay(5000); // รอ 1 วินาที
+  delay(5000);  // รอ 1 วินาที
 
   //หน้าสอง
   Page2();
-  delay(5000); // รอ 1 วินาที
+  delay(5000);  // รอ 1 วินาที
 }
 
 /////////////////////////////////LCD//////////////////////////////////////
@@ -285,24 +302,24 @@ void Page2(void) {
   do {
     u8g2.drawFrame(0, 0, 128, 64);
 
-    u8g2.setDrawColor(1); // 1 for solid color
-    u8g2.setFont(u8g2_font_luBS08_te); // Use a bold font, you can choose a different one if needed
+    u8g2.setDrawColor(1);               // 1 for solid color
+    u8g2.setFont(u8g2_font_luBS08_te);  // Use a bold font, you can choose a different one if needed
     // Set the position to display "Project NANO" on the screen
-    int a = 28; // X coordinate
-    int b = 20; // Y coordinate
+    int a = 28;  // X coordinate
+    int b = 15;  // Y coordinate
     u8g2.drawStr(a, b, "Develop by");
-    int c = 2; // X coordinate
-    int d = 35; // Y coordinate
+    int c = 2;   // X coordinate
+    int d = 30;  // Y coordinate
     u8g2.drawStr(c, d, "Chainarong Kulchim");
 
-    u8g2.setFont(u8g2_font_baby_tf); // Use a bold font, you can choose a different one if needed
-    int f = 12; // X coordinate
-    int g = 47; // Y coordinate
-    u8g2.drawStr(f, g, "(medical scientist : VRDSN)");
+    u8g2.setFont(u8g2_font_baby_tf);  // Use a bold font, you can choose a different one if needed
+    int f = 12;                       // X coordinate
+    int g = 47;                       // Y coordinate
+    u8g2.drawStr(f, g, "(Medical scientist : VRDSN)");
 
-    u8g2.setFont(u8g2_font_profont10_mr); // Use a bold font, you can choose a different one if needed
-    int h = 6; // X coordinate
-    int i = 57; // Y coordinate
+    u8g2.setFont(u8g2_font_profont10_mr);  // Use a bold font, you can choose a different one if needed
+    int h = 6;                             // X coordinate
+    int i = 57;                            // Y coordinate
     u8g2.drawStr(h, i, "Chainarong681@gmail.com");
 
   } while (u8g2.nextPage());
@@ -310,22 +327,22 @@ void Page2(void) {
 
 //Loading Bar
 void draw_box(u8g2_uint_t x, u8g2_uint_t y, u8g2_uint_t width, u8g2_uint_t height) {
-    u8g2.drawBox(x, y, width, height);
+  u8g2.drawBox(x, y, width, height);
 }
 
 void draw_loading_bar(u8g2_uint_t boxlong) {
-    u8g2.firstPage();
-    do {
+  u8g2.firstPage();
+  do {
 
-        u8g2.setFont(u8g2_font_luBS08_te); // Use a bold font, you can choose a different one if needed
-        // Set the position to display "Project NANO" on the screen
-        int x = 28; // X coordinate
-        int y = 20; // Y coordinate
-        u8g2.drawStr(x, y, "please wait");
-        // Draw loading bar based on the value of boxlong
-        draw_box(10, 27, boxlong, 10);
-    } while (u8g2.nextPage());
-    //delay(30);
+    u8g2.setFont(u8g2_font_luBS08_te);  // Use a bold font, you can choose a different one if needed
+    // Set the position to display "Project NANO" on the screen
+    int x = 28;  // X coordinate
+    int y = 20;  // Y coordinate
+    u8g2.drawStr(x, y, "please wait");
+    // Draw loading bar based on the value of boxlong
+    draw_box(10, 27, boxlong, 10);
+  } while (u8g2.nextPage());
+  //delay(30);
 }
 
 /////////////////////////////////LCD//////////////////////////////////////
@@ -335,47 +352,148 @@ void loop(void) {
 
   //LCD
   //Loading bar
-    if (boxlong < 108) {
-        draw_loading_bar(boxlong);
-        boxlong += 20;  // Increase boxlong or update it based on your logic
-    } else {
-        //WIFI
-        server.handleClient();
+  if (boxlong < 108) {
+    draw_loading_bar(boxlong);
+    boxlong += 2;  // Increase boxlong or update it based on your logic
+  } 
+  else {
+    //WIFI
+    server.handleClient();
 
-        //Run program
-        Run();
-        
+    //Run program
+    Run();
+
+    //อ่านค่าตัวแปลไปเก็บเพื่อใช้เป็นค่า setting ในตอนกรณีที่เครื่องไม่อยู่ในสถานะการ Run ทำงาน
+    if (State_Run != 1) {
+      //อ่าน EEPROM เก็บที่ตัวแปล
+      // อ่านค่าจาก EEPROM ที่ตำแหน่ง 0 และเก็บในตัวแปล methodRUN
+      String methodRUN_EEPROM;
+      EEPROM.get(0, methodRUN_EEPROM);
+      methodRUN = methodRUN_EEPROM.toFloat();
+      // อ่านค่าจาก EEPROM ที่ตำแหน่ง 4 (float มีขนาด 4 บิต) และเก็บในตัวแปล timeRUN
+      String timeRUN_EEPROM;
+      EEPROM.get(5, timeRUN_EEPROM);
+      timeRUN = timeRUN_EEPROM.toFloat();
+      // อ่านค่าจาก EEPROM ที่ตำแหน่ง 8 และเก็บในตัวแปล temCRUN
+      String temCRUN_EEPROM;
+      EEPROM.get(10, temCRUN_EEPROM);
+      temCRUN = temCRUN_EEPROM.toFloat();
     }
- 
+  }
+
+
+
 }
 
-void Run(){
+void Run() {
   u8g2.firstPage();
   do {
     u8g2.drawFrame(0, 0, 128, 64);
-    u8g2.setDrawColor(1); // 1 for solid color
-    u8g2.setFont(u8g2_font_resoledbold_tr); // Use a bold font, you can choose a different one if needed
+    u8g2.setDrawColor(1);                    // 1 for solid color
+    u8g2.setFont(u8g2_font_squeezed_b6_tr);  // Use a bold font, you can choose a different one if needed
     // Set the position to display "Project NANO" on the screen
-    int a = 2; // X coordinate
-    int b = 9; // Y coordinate
+    int a = 2;  // X coordinate
+    int b = 8;  // Y coordinate
     u8g2.drawStr(a, b, "Read:");
-    int c = 32; // X coordinate
-    int d = 9; // Y coordinate
+    int c = 30;  // X coordinate
+    int d = 8;   // Y coordinate
     u8g2.setCursor(c, d);
     u8g2.print(READTEMP, 2);
     // Set the position to display "Project NANO" on the screen
-    int e = 62; // X coordinate
-    int f = 9; // Y coordinate
+    int e = 57;  // X coordinate
+    int f = 8;   // Y coordinate
     u8g2.drawStr(e, f, "/ ");
-    int g = 72; // X coordinate
-    int h = 9; // Y coordinate
+    int g = 63;  // X coordinate
+    int h = 8;   // Y coordinate
     u8g2.setCursor(g, h);
     u8g2.print(methodRUN, 2);
 
+    //สร้าง status ตอนรัน
+    if (State_Run == 0) {
+      u8g2.setFont(u8g2_font_squeezed_b6_tr);  // Use a bold font, you can choose a different one if needed
+      int i = 90;                              // X coordinate
+      int j = 8;                               // Y coordinate
+      u8g2.drawStr(i, j, "-->WAIT");
+    } else if (State_Run == 1) {
+      u8g2.setFont(u8g2_font_squeezed_b6_tr);  // Use a bold font, you can choose a different one if needed
+      int i = 90;                              // X coordinate
+      int j = 8;                               // Y coordinate
+      u8g2.drawStr(i, j, "-->RUN");
+    } else if (State_Run == 2) {
+      u8g2.setFont(u8g2_font_squeezed_b6_tr);  // Use a bold font, you can choose a different one if needed
+      int i = 90;                              // X coordinate
+      int j = 8;                               // Y coordinate
+      u8g2.drawStr(i, j, "-->END");
+    }
+
+    //ส่วนแสดงกราฟ
+    // วาดเส้นแนวตั้งที่ตำแหน่ง x=5, y=10, ความยาว 50 pixel
+    u8g2.drawVLine(5, 10, 50);
+    // วาดจุดแนวตั้งที่ตำแหน่ง x=20, y=10 และห่างกันทีละ 5 จุด
+    for (int i = 0; i < 15; i++) {
+      u8g2.drawPixel(4, 10 + i * 5);
+    }
+    // วาดเส้นแนวนอนที่ตำแหน่ง x=10, y=30, ความยาว 80 pixel
+    u8g2.drawHLine(5, 60, 91);
+    // วาดจุดแนวนอนที่ตำแหน่ง x=5, y=61 และห่างกันทีละ 5 จุด
+    for (int i = 0; i < 19; i++) {
+      u8g2.drawPixel(5 + i * 5, 61);
+    }
+    // วาดจุดแนวนอนค่า Average seting ที่ตำแหน่ง x=5, y=35 และห่างกันทีละ 5 จุด
+    for (int i = 0; i < 19; i++) {
+      u8g2.drawPixel(5 + i * 5, 35);
+    }
+    //กล่อง parameter
+    u8g2.drawFrame(97, 10, 29, 51);
+    u8g2.setFont(u8g2_font_micro_mr);  // Use a bold font, you can choose a different one if needed
+    int l = 100;                       // X coordinate
+    int m = 18;                        // Y coordinate
+    u8g2.drawStr(l, m, "Time");
+    int n = 100;  // X coordinate
+    int o = 25;   // Y coordinate
+    u8g2.setCursor(n, o);
+    u8g2.print(TIME_COUNT);
+
+    int p = 100;                       // X coordinate
+    int q = 35;                        // Y coordinate
+    u8g2.drawStr(p, q, "CT");
+
+    int r = 100;                       // X coordinate
+    int s = 50;                        // Y coordinate
+    u8g2.drawStr(r, s, "Result");
 
 
-
+timer();
+Graph();
 
   } while (u8g2.nextPage());
+}
 
+void timer() {
+  if (millis() - last_time > period) {
+    TIME_COUNT++;
+    last_time = millis();  //เซฟเวลาปัจจุบันไว้เพื่อรอจนกว่า millis() จะมากกว่าตัวมันเท่า period
+    if (TIME_COUNT >= timeRUN) {
+      TIME_COUNT = 0;
+    }
+  }
+}
+
+void drawY() {
+  u8g2.drawPixel(0, y[0]);
+  if (x <= 108) {
+    y[x++] = READTEMP;
+  }
+  for (int i = 9; i < LENGTH; i++) {
+    if (y[i] != -1 && x <= 108) {
+      u8g2.drawLine(i - 1, y[i - 1], i, y[i]);
+    } else {
+      break;
+    }
+  }
+}
+
+void Graph() {
+  READTEMP = map(READTEMP, 0, 10, HEIGHT - 34, 15);
+  drawY();
 }
