@@ -46,14 +46,15 @@ float s_val[108];  ////////เก็บค่า 100 ค่า
 
 //ประกาศตัวแปรเป็น global เพื่อเก็บค่าไว้ไม่ให้ reset จากการวนloop
 unsigned long last_time = 0;
-unsigned long period = 1000 * 60;  //ระยะเวลาที่ต้องการรอ 1 นาที 
+unsigned long period = 1000;  //ระยะเวลาที่ต้องการรอ 1 นาที (1000 * 60)
 int TIME_COUNT = 0;
 
 //Set Line graph
-const int HEIGHT=64;
-const int LENGTH=108;
-int x;
-int y[LENGTH];
+//เก็บค่า array
+float tempValues[90];  // เก็บค่า READTEMP ล่าสุด 90 ค่า
+int timeValues[90];    // เก็บค่า TIME_COUNT ล่าสุด 90 ค่า
+int currentIndex = 0;   // ดัชนีปัจจุบันในอาร์เรย์
+
 
 /////////////////////////////////WIFI//////////////////////////////////////
 // Function to write a string to EEPROM
@@ -463,8 +464,26 @@ void Run() {
     u8g2.drawStr(r, s, "Result");
 
 
-timer();
-Graph();
+    timer();
+    //สร้างกราฟ
+    // บันทึกค่า READTEMP ล่าสุดในอาร์เรย์ tempValues
+    tempValues[currentIndex] = READTEMP;
+
+    // บันทึกค่า TIME_COUNT ล่าสุดในอาร์เรย์ timeValues
+    timeValues[currentIndex] = TIME_COUNT;
+
+    // เพิ่มดัชนีปัจจุบัน
+    currentIndex = (currentIndex + 1) % 15;  // วนลูปกลับไปที่ 0 เมื่อเต็ม
+
+     // วาดกราฟ
+    for (int i = 0; i < 100; i++) {
+      int x1 = 10 + i * 5;
+      int y1 = map(tempValues[i], 0, 50, 70, 45);  // แปลงค่า READTEMP เป็นค่า y
+      int x2 = 10 + (i + 1) * 5;
+      int y2 = map(tempValues[i + 1], 0, 50, 70, 45);  // แปลงค่า READTEMP เป็นค่า y
+      u8g2.drawLine(x1, y1, x2, y2);
+    }
+
 
   } while (u8g2.nextPage());
 }
@@ -475,25 +494,9 @@ void timer() {
     last_time = millis();  //เซฟเวลาปัจจุบันไว้เพื่อรอจนกว่า millis() จะมากกว่าตัวมันเท่า period
     if (TIME_COUNT >= timeRUN) {
       TIME_COUNT = 0;
+
+
     }
   }
 }
 
-void drawY() {
-  u8g2.drawPixel(0, y[0]);
-  if (x <= 108) {
-    y[x++] = READTEMP;
-  }
-  for (int i = 9; i < LENGTH; i++) {
-    if (y[i] != -1 && x <= 108) {
-      u8g2.drawLine(i - 1, y[i - 1], i, y[i]);
-    } else {
-      break;
-    }
-  }
-}
-
-void Graph() {
-  READTEMP = map(READTEMP, 0, 10, HEIGHT - 34, 15);
-  drawY();
-}
