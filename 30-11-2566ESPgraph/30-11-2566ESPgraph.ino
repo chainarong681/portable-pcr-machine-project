@@ -484,9 +484,10 @@ void timer() {
     //ทดสอบ random ค่า
     temperature[currentIndex] = READTEMP;  // Replace with actual sensor reading
     } 
-    // else if (currentIndex >=89){ //รีเซ็ทค่า currentIndex
-    //   currentIndex =0;
-    // }
+    else if (currentIndex >=89){ //รีเซ็ทค่า currentIndex
+      //currentIndex =0;
+      clearGraph();
+    }
     last_time = millis();  //เซฟเวลาปัจจุบันไว้เพื่อรอจนกว่า millis() จะมากกว่าตัวมันเท่า period
     if (TIME_COUNT >= timeRUN) {
       TIME_COUNT = 0;
@@ -494,13 +495,22 @@ void timer() {
   }
 }
 
-void Graph() { //กราฟแท่ง
+void Graph() { //กราฟ scatter plot
   for (int igraph = 0; igraph < 89; igraph++) {
-    int yPos = map(temperature[igraph], 25, 70, 55, 10); // ปรับค่าใน map()
-    // ใช้ u8g2.drawVLine() เพื่อวาดแท่ง
-    u8g2.drawVLine(5 + igraph, yPos, 30 + yPos);
+    int yPos1 = map(temperature[igraph], 25, 70, 55, 10);  
+    int yPos2 = map(temperature[igraph + 1], 25, 70, 55, 10);
+
+    // ใช้ u8g2.drawHLine() แทน u8g2.drawLine() หรือลองใช้คำสั่งวาดเส้น曲จากศูนย์กลาง
+    u8g2.drawHLine(5 + igraph, yPos1, 1); 
   }
 }
+
+void clearGraph() {
+  for (int i = 0; i < 90; i++) {
+    temperature[i] = 0.0;
+  }
+}
+
 
 ////////////////////////////////////กราฟโค้ด///////////////////////////////////////////////////////////////
 // void Graph(){ //กราฟเส้น
