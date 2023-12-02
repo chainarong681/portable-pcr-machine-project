@@ -473,8 +473,7 @@ void timer() {
     TIME_COUNT++;
 
     //ทดสอบ random ค่า
-    // READTEMP = random(500, 660) / 10.0;
-    READTEMP = 65;
+    READTEMP = random(500, 660) / 10.0;
 
     //ส่วนสร้างกราฟ
     if (currentIndex <89){ //เก็บค่าแค่ 90 ค่าเท่านั้น
@@ -495,20 +494,15 @@ void timer() {
   }
 }
 
-
-
-void Graph() {
+void Graph() { //กราฟแท่ง
   for (int igraph = 0; igraph < 89; igraph++) {
     int yPos = map(temperature[igraph], 25, 70, 55, 10); // ปรับค่าใน map()
-
     // ใช้ u8g2.drawVLine() เพื่อวาดแท่ง
     u8g2.drawVLine(5 + igraph, yPos, 30 + yPos);
   }
 }
 
-
-
-
+////////////////////////////////////กราฟโค้ด///////////////////////////////////////////////////////////////
 // void Graph(){ //กราฟเส้น
 //   //ส่วนสร้างกราฟ
 //     for (igraph = 0; igraph< 89; igraph++) {
@@ -539,13 +533,6 @@ void Graph() {
 
 //     u8g2.drawLine(x1, y1, x2, y1);  // วาดเส้นแนวนอนที่ y คงที่
 //     u8g2.drawLine(x2, y1, x2, y2);  // วาดเส้นแนวตั้งไปยัง y ถัดไป
-//   }
-// }
-
-// void Graph() { //กราฟแท่ง
-//   for (int igraph = 0; igraph < 89; igraph++) {
-//     int yPos = map(temperature[igraph], 25, 70, 55, 10);  
-//     u8g2.drawVLine(5 + igraph, yPos, 55 - yPos);  // ใช้กราฟแท่งแทนเส้น
 //   }
 // }
 
