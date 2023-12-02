@@ -41,19 +41,14 @@ float temCRUN;
 //สถานะการทำงาน
 int State_Run = 0;
 
-//เก็บค่าสร้างกราฟ
-float s_val[108];  ////////เก็บค่า 100 ค่า
-
 //ประกาศตัวแปรเป็น global เพื่อเก็บค่าไว้ไม่ให้ reset จากการวนloop
 unsigned long last_time = 0;
 unsigned long period = 1000;  //ระยะเวลาที่ต้องการรอ 1 นาที (1000 * 60)
 int TIME_COUNT = 0;
 
 //Set Line graph
-//เก็บค่า array
-float tempValues[90];  // เก็บค่า READTEMP ล่าสุด 90 ค่า
-int timeValues[90];    // เก็บค่า TIME_COUNT ล่าสุด 90 ค่า
-int currentIndex = 0;   // ดัชนีปัจจุบันในอาร์เรย์
+float temperature[90];  // Array to store temperature values
+int currentIndex = 0;   // Index to keep track of the current position in the array
 
 
 /////////////////////////////////WIFI//////////////////////////////////////
@@ -348,9 +343,6 @@ void draw_loading_bar(u8g2_uint_t boxlong) {
 
 /////////////////////////////////LCD//////////////////////////////////////
 void loop(void) {
-  //ทดสอบ random ค่า
-  READTEMP = random(300, 660) / 10.0;
-
   //LCD
   //Loading bar
   if (boxlong < 108) {
@@ -381,9 +373,6 @@ void loop(void) {
       temCRUN = temCRUN_EEPROM.toFloat();
     }
   }
-
-
-
 }
 
 void Run() {
@@ -434,7 +423,7 @@ void Run() {
     for (int i = 0; i < 15; i++) {
       u8g2.drawPixel(4, 10 + i * 5);
     }
-    // วาดเส้นแนวนอนที่ตำแหน่ง x=10, y=30, ความยาว 80 pixel
+    // วาดเส้นแนวนอนที่ตำแหน่ง x=5, y=60, ความยาว 91 pixel
     u8g2.drawHLine(5, 60, 91);
     // วาดจุดแนวนอนที่ตำแหน่ง x=5, y=61 และห่างกันทีละ 5 จุด
     for (int i = 0; i < 19; i++) {
@@ -463,34 +452,33 @@ void Run() {
     int s = 50;                        // Y coordinate
     u8g2.drawStr(r, s, "Result");
 
-
-    timer();
-    //สร้างกราฟ
-    // บันทึกค่า READTEMP ล่าสุดในอาร์เรย์ tempValues
-    tempValues[currentIndex] = READTEMP;
-
-    // บันทึกค่า TIME_COUNT ล่าสุดในอาร์เรย์ timeValues
-    timeValues[currentIndex] = TIME_COUNT;
-
-    // เพิ่มดัชนีปัจจุบัน
-    currentIndex = (currentIndex + 1) % 15;  // วนลูปกลับไปที่ 0 เมื่อเต็ม
-
-     // วาดกราฟ
-    for (int i = 0; i < 100; i++) {
-      int x1 = 10 + i * 5;
-      int y1 = map(tempValues[i], 0, 50, 70, 45);  // แปลงค่า READTEMP เป็นค่า y
-      int x2 = 10 + (i + 1) * 5;
-      int y2 = map(tempValues[i + 1], 0, 50, 70, 45);  // แปลงค่า READTEMP เป็นค่า y
-      u8g2.drawLine(x1, y1, x2, y2);
+  //ส่วนสร้างกราฟ
+    for (int igraph = 0; igraph< 89; igraph++) {
+      int yPos1 = map(temperature[igraph], 25, 70, 55, 10);  // Map temperature to fit Y-axis range
+      int yPos2 = map(temperature[igraph + 1], 25, 70, 55, 10);
+      u8g2.drawLine(5 + igraph, yPos1, 5 + igraph, yPos2);   
     }
 
-
   } while (u8g2.nextPage());
+
+  //อ่านค่าและจับเวลา
+  timer();
+
+
 }
 
 void timer() {
   if (millis() - last_time > period) {
     TIME_COUNT++;
+
+    //ทดสอบ random ค่า
+    READTEMP = random(300, 660) / 10.0;
+
+    //ส่วนสร้างกราฟ
+    currentIndex = (currentIndex + 1) % 90;
+    //ทดสอบ random ค่า
+    temperature[currentIndex] = READTEMP;  // Replace with actual sensor reading
+
     last_time = millis();  //เซฟเวลาปัจจุบันไว้เพื่อรอจนกว่า millis() จะมากกว่าตัวมันเท่า period
     if (TIME_COUNT >= timeRUN) {
       TIME_COUNT = 0;
@@ -499,4 +487,3 @@ void timer() {
     }
   }
 }
-
