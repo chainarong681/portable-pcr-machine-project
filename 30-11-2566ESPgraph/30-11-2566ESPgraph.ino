@@ -43,12 +43,13 @@ int State_Run = 0;
 
 //ประกาศตัวแปรเป็น global เพื่อเก็บค่าไว้ไม่ให้ reset จากการวนloop
 unsigned long last_time = 0;
-unsigned long period = 1000;  //ระยะเวลาที่ต้องการรอ 1 นาที (1000 * 60)
+unsigned long period = 500;  //ระยะเวลาที่ต้องการรอ 1 นาที (1000 * 60)
 int TIME_COUNT = 0;
 
 //Set Line graph
 float temperature[90];  // Array to store temperature values
-int currentIndex = 0;   // Index to keep track of the current position in the array
+int currentIndex;   // Index to keep track of the current position in the array
+int igraph;
 
 
 /////////////////////////////////WIFI//////////////////////////////////////
@@ -353,9 +354,6 @@ void loop(void) {
     //WIFI
     server.handleClient();
 
-    //Run program
-    Run();
-
     //อ่านค่าตัวแปลไปเก็บเพื่อใช้เป็นค่า setting ในตอนกรณีที่เครื่องไม่อยู่ในสถานะการ Run ทำงาน
     if (State_Run != 1) {
       //อ่าน EEPROM เก็บที่ตัวแปล
@@ -372,12 +370,16 @@ void loop(void) {
       EEPROM.get(10, temCRUN_EEPROM);
       temCRUN = temCRUN_EEPROM.toFloat();
     }
+
+     //Run program
+    u8g2.clearBuffer();
+    Run();
+    u8g2.sendBuffer();
   }
 }
 
 void Run() {
-  u8g2.firstPage();
-  do {
+ 
     u8g2.drawFrame(0, 0, 128, 64);
     u8g2.setDrawColor(1);                    // 1 for solid color
     u8g2.setFont(u8g2_font_squeezed_b6_tr);  // Use a bold font, you can choose a different one if needed
@@ -452,17 +454,15 @@ void Run() {
     int s = 50;                        // Y coordinate
     u8g2.drawStr(r, s, "Result");
 
-  //ส่วนสร้างกราฟ
-    for (int igraph = 0; igraph< 89; igraph++) {
-      int yPos1 = map(temperature[igraph], 25, 70, 55, 10);  // Map temperature to fit Y-axis range
-      int yPos2 = map(temperature[igraph + 1], 25, 70, 55, 10);
-      u8g2.drawLine(5 + igraph, yPos1, 5 + igraph, yPos2);   
-    }
-
-  } while (u8g2.nextPage());
 
   //อ่านค่าและจับเวลา
-  timer();
+  timer();  
+
+  Graph();
+
+ 
+
+
 
 
 }
@@ -472,18 +472,51 @@ void timer() {
     TIME_COUNT++;
 
     //ทดสอบ random ค่า
-    READTEMP = random(300, 660) / 10.0;
+    READTEMP = random(500, 660) / 10.0;
 
     //ส่วนสร้างกราฟ
-    currentIndex = (currentIndex + 1) % 90;
+    if (currentIndex <89){ //เก็บค่าแค่ 90 ค่าเท่านั้น
+      currentIndex++;
+      //Serial.println(currentIndex);
+      
+      
     //ทดสอบ random ค่า
     temperature[currentIndex] = READTEMP;  // Replace with actual sensor reading
-
+    } 
+    // else if (currentIndex >=89){ //รีเซ็ทค่า currentIndex
+    //   currentIndex =0;
+    // }
     last_time = millis();  //เซฟเวลาปัจจุบันไว้เพื่อรอจนกว่า millis() จะมากกว่าตัวมันเท่า period
     if (TIME_COUNT >= timeRUN) {
       TIME_COUNT = 0;
-
-
     }
   }
 }
+
+// void Graph(){ //กราฟเส้น
+//   //ส่วนสร้างกราฟ
+//     for (igraph = 0; igraph< 89; igraph++) {
+//       int yPos1 = map(temperature[igraph], 25, 70, 55, 10);  // Map temperature to fit Y-axis range
+//       int yPos2 = map(temperature[igraph + 1], 25, 70, 55, 10);
+//       u8g2.drawLine(5 + igraph, yPos1, 5 + igraph, yPos2);   
+//     }
+
+// }
+
+// void Graph() { //กราฟ scatter plot
+//   for (int igraph = 0; igraph < 88; igraph++) {
+//     int yPos1 = map(temperature[igraph], 25, 70, 55, 10);  
+//     int yPos2 = map(temperature[igraph + 1], 25, 70, 55, 10);
+
+//     // ใช้ u8g2.drawHLine() แทน u8g2.drawLine() หรือลองใช้คำสั่งวาดเส้น曲จากศูนย์กลาง
+//     u8g2.drawHLine(5 + igraph, yPos1, 1); 
+//   }
+// }
+
+void Graph() { //กราฟแท่ง
+  for (int igraph = 0; igraph < 88; igraph++) {
+    int yPos = map(temperature[igraph], 25, 70, 55, 10);  
+    u8g2.drawVLine(5 + igraph, yPos, 55 - yPos);  // ใช้กราฟแท่งแทนเส้น
+  }
+}
+
