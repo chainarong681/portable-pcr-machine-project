@@ -267,7 +267,7 @@ void setup(void) {
   u8g2.begin();
 
   // กลับจอ 180 องศา
-  u8g2.setDisplayRotation(U8G2_R2);
+  //u8g2.setDisplayRotation(U8G2_R2);
 
   //หน้าแรก
   u8g2.firstPage();
@@ -372,14 +372,15 @@ void loop(void) {
     }
 
      //Run program
-    u8g2.clearBuffer();
+    //u8g2.clearBuffer();
     Run();
-    u8g2.sendBuffer();
+    //u8g2.sendBuffer();
   }
 }
 
 void Run() {
- 
+ u8g2.firstPage();
+  do {
     u8g2.drawFrame(0, 0, 128, 64);
     u8g2.setDrawColor(1);                    // 1 for solid color
     u8g2.setFont(u8g2_font_squeezed_b6_tr);  // Use a bold font, you can choose a different one if needed
@@ -459,7 +460,7 @@ void Run() {
   timer();  
 
   Graph();
-
+} while (u8g2.nextPage());
  
 
 
@@ -472,7 +473,8 @@ void timer() {
     TIME_COUNT++;
 
     //ทดสอบ random ค่า
-    READTEMP = random(500, 660) / 10.0;
+    // READTEMP = random(500, 660) / 10.0;
+    READTEMP = 65;
 
     //ส่วนสร้างกราฟ
     if (currentIndex <89){ //เก็บค่าแค่ 90 ค่าเท่านั้น
@@ -493,6 +495,20 @@ void timer() {
   }
 }
 
+
+
+void Graph() {
+  for (int igraph = 0; igraph < 89; igraph++) {
+    int yPos = map(temperature[igraph], 25, 70, 55, 10); // ปรับค่าใน map()
+
+    // ใช้ u8g2.drawVLine() เพื่อวาดแท่ง
+    u8g2.drawVLine(5 + igraph, yPos, 30 + yPos);
+  }
+}
+
+
+
+
 // void Graph(){ //กราฟเส้น
 //   //ส่วนสร้างกราฟ
 //     for (igraph = 0; igraph< 89; igraph++) {
@@ -504,7 +520,7 @@ void timer() {
 // }
 
 // void Graph() { //กราฟ scatter plot
-//   for (int igraph = 0; igraph < 88; igraph++) {
+//   for (int igraph = 0; igraph < 89; igraph++) {
 //     int yPos1 = map(temperature[igraph], 25, 70, 55, 10);  
 //     int yPos2 = map(temperature[igraph + 1], 25, 70, 55, 10);
 
@@ -513,10 +529,32 @@ void timer() {
 //   }
 // }
 
-void Graph() { //กราฟแท่ง
-  for (int igraph = 0; igraph < 88; igraph++) {
-    int yPos = map(temperature[igraph], 25, 70, 55, 10);  
-    u8g2.drawVLine(5 + igraph, yPos, 55 - yPos);  // ใช้กราฟแท่งแทนเส้น
-  }
-}
+// void Graph() { //กราฟเส้น
+//   for (int igraph = 0; igraph < 89; igraph++) {
+//     int x1 = 4 + igraph;
+//     int y1 = map(temperature[igraph], 25, 70, 55, 10);
+
+//     int x2 = 5 + igraph;
+//     int y2 = map(temperature[igraph + 1], 25, 70, 55, 10);
+
+//     u8g2.drawLine(x1, y1, x2, y1);  // วาดเส้นแนวนอนที่ y คงที่
+//     u8g2.drawLine(x2, y1, x2, y2);  // วาดเส้นแนวตั้งไปยัง y ถัดไป
+//   }
+// }
+
+// void Graph() { //กราฟแท่ง
+//   for (int igraph = 0; igraph < 89; igraph++) {
+//     int yPos = map(temperature[igraph], 25, 70, 55, 10);  
+//     u8g2.drawVLine(5 + igraph, yPos, 55 - yPos);  // ใช้กราฟแท่งแทนเส้น
+//   }
+// }
+
+// void Graph() { //กราฟแท่ง
+//   for (int igraph = 0; igraph < 89; igraph++) {
+//     int yPos = map(temperature[igraph], 25, 70, 55, 10); // ปรับค่าใน map()
+//     // ใช้ u8g2.drawVLine() เพื่อวาดแท่ง
+//     u8g2.drawVLine(5 + igraph, yPos, 30 + yPos);
+//   }
+// }
+
 
