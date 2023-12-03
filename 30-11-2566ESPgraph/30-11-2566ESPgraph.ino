@@ -105,14 +105,54 @@ void handleSecondPage() {
   String time = readStringFromEEPROM(5);
   String tempC = readStringFromEEPROM(10);
 
-  html += "<p>Method: " + method + "</p>";
-  html += "<p>Time: " + time + "</p>";
+  html += "<p>Run method: " + method + "</p>";
+  html += "<p>Run time: " + time + "</p>";
   html += "<p>Temp Correction: " + tempC + "</p>";
 
-  html += "<script>function goToRoot() { window.location.href = '/'; }</script>";
+  // เพิ่มปุ่ม Start Run และ Stop Run
+  html += "<button style='font-size: 24px; background-color: lightblue;' onclick='startRun()'>Start Run</button> ";
+  html += "<button style='font-size: 24px; background-color: lightcoral;' onclick='stopRun()'>Stop Run</button> ";
+ html += "<script>";
+html += "function startRun() {";
+html += "  if (confirm('Are you sure to start RUN?')) {";
+html += "    fetch('/startRun', { method: 'POST' })";
+html += "      .then(response => response.json())";
+html += "      .then(data => {";
+html += "        console.log('State_Run updated:', data.State_Run);";
+html += "      });";
+html += "  }";
+html += "}";
+html += "function stopRun() {";
+html += "  if (confirm('Are you sure you want to stop?')) {";
+html += "    fetch('/stopRun', { method: 'POST' })";
+html += "      .then(response => response.json())";
+html += "      .then(data => {";
+html += "        console.log('State_Run updated:', data.State_Run);";
+html += "      });";
+html += "  }";
+html += "}";
+html += "</script>";
+
+
   html += "</body></html>";
 
   server.send(200, "text/html", html);
+}
+
+void handleStartRun() {
+  // เพิ่มโค้ดที่ต้องการในการเริ่ม Run ที่นี่
+  // เช่น เซ็ตค่า State_Run, เริ่มการวัด, เปิดอุปกรณ์ต่างๆ, ฯลฯ
+  // ...
+  server.send(200, "text/plain", "OK");  // ส่ง response กลับว่าเริ่ม Run สำเร็จ
+}
+
+void handleStopRun() {
+  // เพิ่มโค้ดที่ต้องการในการหยุด Run ที่นี่
+  // เช่น หยุดการวัด, ปิดอุปกรณ์ต่างๆ, ฯลฯ
+  // ...
+  // ตั้งค่า State_Run เป็น 0 เพื่อบอกว่าไม่ได้ทำงาน
+  State_Run = 0;
+  server.send(200, "text/plain", "OK");  // ส่ง response กลับว่าหยุด Run สำเร็จ
 }
 
 void handleThirdPage() {
@@ -258,6 +298,16 @@ void setup(void) {
   server.on("/Fourth", HTTP_GET, handleFourthPage);
   server.on("/submitFourth", HTTP_POST, handleFourthPageSubmit);
 
+  server.on("/startRun", HTTP_POST, [](){
+  State_Run = 2; // ตั้งค่า State_Run เมื่อได้รับ request
+  server.send(200, "application/json", "{\"State_Run\": 2}");
+  });
+  server.on("/stopRun", HTTP_POST, [](){
+    State_Run = 3; // ตั้งค่า State_Run เมื่อได้รับ request
+    server.send(200, "application/json", "{\"State_Run\": 3}");
+  });
+
+
 
   server.begin();
 
@@ -344,6 +394,11 @@ void draw_loading_bar(u8g2_uint_t boxlong) {
 
 /////////////////////////////////LCD//////////////////////////////////////
 void loop(void) {
+  //ทดสอบ random ค่า
+    READTEMP = random(500, 660) / 10.0;
+
+    Serial.println(State_Run);
+
   //LCD
   //Loading bar
   if (boxlong < 108) {
@@ -372,9 +427,14 @@ void loop(void) {
     }
 
      //Run program
-    //u8g2.clearBuffer();
+    // ตรวจสอบว่าอยู่ในสถานะ Run หรือไม่
+  if (State_Run == 1) {
     Run();
-    //u8g2.sendBuffer();
+  } else {
+    // ทำงานอื่นๆที่ไม่ใช่ Run ที่นี่
+    // ...
+  }
+    
   }
 }
 
@@ -413,6 +473,11 @@ void Run() {
       int j = 8;                               // Y coordinate
       u8g2.drawStr(i, j, "-->RUN");
     } else if (State_Run == 2) {
+      u8g2.setFont(u8g2_font_squeezed_b6_tr);  // Use a bold font, you can choose a different one if needed
+      int i = 90;                              // X coordinate
+      int j = 8;                               // Y coordinate
+      u8g2.drawStr(i, j, "-->STOP");
+    } else if (State_Run == 3) {
       u8g2.setFont(u8g2_font_squeezed_b6_tr);  // Use a bold font, you can choose a different one if needed
       int i = 90;                              // X coordinate
       int j = 8;                               // Y coordinate
@@ -482,9 +547,6 @@ void timer() {
 
     TIME_COUNT++;
 
-    //ทดสอบ random ค่า
-    READTEMP = random(500, 660) / 10.0;
-
     //ส่วนสร้างกราฟ
     if (currentIndex <89){ //เก็บค่าแค่ 90 ค่าเท่านั้น
       currentIndex++;
@@ -505,15 +567,15 @@ void timer() {
   }
 }
 
-void State_Run(){
-  if (State_Run == 2){
+// void State_Run_value(){
+//   if (State_Run == 2){
 
-  } else if (){
+//   } else if (){
 
-  } else if (){
+//   } else if (){
 
-  }
-}
+//   }
+// }
 
 void Graph() { //กราฟ scatter plot
   for (int igraph = 0; igraph < 89; igraph++) {
