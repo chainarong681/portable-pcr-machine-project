@@ -420,56 +420,66 @@ void Run() {
     }
 
     //ส่วนแสดงกราฟ
+    //ตัวเลข เลเบล
+    u8g2.setFont(u8g2_font_4x6_mn);  // Use a bold font, you can choose a different one if needed
+    // Set the position to display "Project NANO" on the screen
+    int n1 = 3;  // X coordinate
+    int b1 = 53;  // Y coordinate
+    u8g2.drawStr(n1, b1, "30");
+    int n2 = 3;  // X coordinate
+    int b2 = 43;  // Y coordinate
+    u8g2.drawStr(n2, b2, "40");
+    int n3 = 3;  // X coordinate
+    int b3 = 33;  // Y coordinate
+    u8g2.drawStr(n3, b3, "50");
+    int n4 = 3;  // X coordinate
+    int b4 = 23;  // Y coordinate
+    u8g2.drawStr(n4, b4, "60");
+
+    //วาดแกน
     // วาดเส้นแนวตั้งที่ตำแหน่ง x=5, y=10, ความยาว 50 pixel
-    u8g2.drawVLine(5, 10, 50);
+    u8g2.drawVLine(12, 10, 50);
     // วาดจุดแนวตั้งที่ตำแหน่ง x=20, y=10 และห่างกันทีละ 5 จุด
     for (int i = 0; i < 15; i++) {
-      u8g2.drawPixel(4, 10 + i * 5);
+      u8g2.drawPixel(11, 10 + i * 5);
     }
     // วาดเส้นแนวนอนที่ตำแหน่ง x=5, y=60, ความยาว 91 pixel
-    u8g2.drawHLine(5, 60, 91);
+    u8g2.drawHLine(12, 60, 91);
     // วาดจุดแนวนอนที่ตำแหน่ง x=5, y=61 และห่างกันทีละ 5 จุด
     for (int i = 0; i < 19; i++) {
-      u8g2.drawPixel(5 + i * 5, 61);
+      u8g2.drawPixel(12 + i * 5, 61);
     }
-    // วาดจุดแนวนอนค่า Average seting ที่ตำแหน่ง x=5, y=35 และห่างกันทีละ 5 จุด
-    for (int i = 0; i < 19; i++) {
-      u8g2.drawPixel(5 + i * 5, 35);
-    }
+
     //กล่อง parameter
-    u8g2.drawFrame(97, 10, 29, 51);
+    u8g2.drawFrame(104, 10, 22, 52);
     u8g2.setFont(u8g2_font_micro_mr);  // Use a bold font, you can choose a different one if needed
-    int l = 100;                       // X coordinate
+    int l = 106;                       // X coordinate
     int m = 18;                        // Y coordinate
     u8g2.drawStr(l, m, "Time");
-    int n = 100;  // X coordinate
+    int n = 110;  // X coordinate
     int o = 25;   // Y coordinate
     u8g2.setCursor(n, o);
     u8g2.print(TIME_COUNT);
 
-    int p = 100;                       // X coordinate
+    int p = 106;                       // X coordinate
     int q = 35;                        // Y coordinate
     u8g2.drawStr(p, q, "CT");
 
-    int r = 100;                       // X coordinate
+    int r = 106;                       // X coordinate
     int s = 50;                        // Y coordinate
-    u8g2.drawStr(r, s, "Result");
-
+    u8g2.drawStr(r, s, "PID");
 
   //อ่านค่าและจับเวลา
   timer();  
-
+  //อ่านกราฟ
   Graph();
 } while (u8g2.nextPage());
  
-
-
-
-
 }
 
 void timer() {
   if (millis() - last_time > period) {
+
     TIME_COUNT++;
 
     //ทดสอบ random ค่า
@@ -480,12 +490,12 @@ void timer() {
       currentIndex++;
       //Serial.println(currentIndex);
       
-      
     //ทดสอบ random ค่า
     temperature[currentIndex] = READTEMP;  // Replace with actual sensor reading
+
     } 
     else if (currentIndex >=89){ //รีเซ็ทค่า currentIndex
-      //currentIndex =0;
+      currentIndex =0; //รีเซ็ทค่า currentIndex เริ่มต้นใหม่
       clearGraph();
     }
     last_time = millis();  //เซฟเวลาปัจจุบันไว้เพื่อรอจนกว่า millis() จะมากกว่าตัวมันเท่า period
@@ -495,22 +505,31 @@ void timer() {
   }
 }
 
+void State_Run(){
+  if (State_Run == 2){
+
+  } else if (){
+
+  } else if (){
+
+  }
+}
+
 void Graph() { //กราฟ scatter plot
   for (int igraph = 0; igraph < 89; igraph++) {
     int yPos1 = map(temperature[igraph], 25, 70, 55, 10);  
     int yPos2 = map(temperature[igraph + 1], 25, 70, 55, 10);
 
     // ใช้ u8g2.drawHLine() แทน u8g2.drawLine() หรือลองใช้คำสั่งวาดเส้น曲จากศูนย์กลาง
-    u8g2.drawHLine(5 + igraph, yPos1, 1); 
+    u8g2.drawHLine(12 + igraph, yPos1, 1); 
   }
 }
 
-void clearGraph() {
+void clearGraph() { //เคลียร์หน้าจอ
   for (int i = 0; i < 90; i++) {
     temperature[i] = 0.0;
   }
 }
-
 
 ////////////////////////////////////กราฟโค้ด///////////////////////////////////////////////////////////////
 // void Graph(){ //กราฟเส้น
