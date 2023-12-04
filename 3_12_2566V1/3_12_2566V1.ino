@@ -35,7 +35,7 @@ float READTEMP;
 
 //อ่าน EEPROM เก็บเพื่ใช้เป็นค่า setting
 float methodRUN;
-float timeRUN;
+int timeRUN;
 float temCRUN;
 
 //สถานะการทำงาน
