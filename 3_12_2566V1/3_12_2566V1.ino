@@ -40,7 +40,6 @@ float temCRUN;
 
 //สถานะการทำงาน
 int State_Run = 0;
-int State_string = 0;
 
 //ประกาศตัวแปรเป็น global เพื่อเก็บค่าไว้ไม่ให้ reset จากการวนloop
 unsigned long last_time = 0;
@@ -272,20 +271,17 @@ void handleFourthPageSubmit() {
 /////////////////////////////////WIFI//////////////////////////////////////
 
 void setup(void) {
-  //wifi
-  Serial.begin(115200);
-
   WiFi.softAP(ssid, password);
   delay(100);
 
   WiFi.softAPConfig(apIP, gatewayIP, subnetIP);
 
-  Serial.println("Access Point IP address: " + WiFi.softAPIP().toString());
-
-  EEPROM.begin(512);  // Begin with EEPROM size
+  server.begin();
 
   server.on("/", HTTP_GET, handleRoot);
+
   server.on("/second", HTTP_GET, handleSecondPage);
+
   server.on("/third", HTTP_GET, handleThirdPage);
   server.on("/submit", HTTP_POST, handleThirdPageSubmit);  // New route for form submission
 
@@ -296,20 +292,16 @@ void setup(void) {
   State_Run = 1; // ตั้งค่า State_Run เมื่อได้รับ request
   server.send(200, "application/json", "{\"State_Run\": 1}");
   });
+
   server.on("/stopRun", HTTP_POST, [](){
     State_Run = 2; // ตั้งค่า State_Run เมื่อได้รับ request
     server.send(200, "application/json", "{\"State_Run\": 2}");
   });
+
   server.on("/resetRun", HTTP_POST, [](){
     State_Run = 4; // ตั้งค่า State_Run เมื่อได้รับ request
     server.send(200, "application/json", "{\"State_Run\": 4}");
   });
-
-
-
-  server.begin();
-
-  Serial.println("HTTP server started");
 
   //LCD
   u8g2.begin();
@@ -339,6 +331,13 @@ void setup(void) {
   //หน้าสอง
   Page2();
   delay(5000);  // รอ 1 วินาที
+
+  EEPROM.begin(512);  // Begin with EEPROM size
+
+  //wifi
+  Serial.begin(115200);
+  Serial.println("Access Point IP address: " + WiFi.softAPIP().toString());
+  Serial.println("HTTP server started");
 }
 
 /////////////////////////////////LCD//////////////////////////////////////
@@ -456,23 +455,31 @@ void Run() {
       int i = 90;                              // X coordinate
       int j = 8;                               // Y coordinate
       u8g2.drawStr(i, j, "-->WAIT");
-    } else if (State_Run == 1) {
-      u8g2.setFont(u8g2_font_squeezed_b6_tr);  // Use a bold font, you can choose a different one if needed
-      int i = 90;                              // X coordinate
-      int j = 8;                               // Y coordinate
-      u8g2.drawStr(i, j, "-->RUN");
-    } else if (State_Run == 2) {
+    }
+    if (State_Run == 1) {
+        //ตรวจสอบ Run complete
+        if (TIME_COUNT <= timeRUN) {
+          u8g2.setFont(u8g2_font_squeezed_b6_tr);  // Use a bold font, you can choose a different one if needed
+          int i = 90;                              // X coordinate
+          int j = 8;                               // Y coordinate
+          u8g2.drawStr(i, j, "-->RUN");
+        }
+        //ตรวจสอบ Run complete
+        if (TIME_COUNT >= timeRUN) {
+          TIME_COUNT = timeRUN;
+          u8g2.setFont(u8g2_font_micro_mr);  // Use a bold font, you can choose a different one if needed
+          int i1 = 111;                              // X coordinate
+          int j1 = 60;                               // Y coordinate
+          u8g2.drawStr(i1, j1, "END");
+        }
+    }
+    if (State_Run == 2) {
       u8g2.setFont(u8g2_font_squeezed_b6_tr);  // Use a bold font, you can choose a different one if needed
       int i = 90;                              // X coordinate
       int j = 8;                               // Y coordinate
       u8g2.drawStr(i, j, "-->STOP");
-    } else if (State_string ==1) {
-      u8g2.setFont(u8g2_font_squeezed_b6_tr);  // Use a bold font, you can choose a different one if needed
-      int i1 = 90;                              // X coordinate
-      int j1 = 8;                               // Y coordinate
-      u8g2.drawStr(i1, j1, "-->END");
-    }
-    
+    } 
+
     //ส่วนแสดงกราฟ
     //ตัวเลข เลเบล
     u8g2.setFont(u8g2_font_4x6_mn);  // Use a bold font, you can choose a different one if needed
@@ -516,18 +523,21 @@ void Run() {
     u8g2.print(TIME_COUNT);
 
     int p = 106;                       // X coordinate
-    int q = 35;                        // Y coordinate
+    int q = 32;                        // Y coordinate
     u8g2.drawStr(p, q, "T-Set");
     int p1 = 106;  // X coordinate
-    int q1 = 42;   // Y coordinate
+    int q1 = 39;   // Y coordinate
     u8g2.setCursor(p1, q1);
     u8g2.print(timeRUN);
 
     int r = 106;                       // X coordinate
-    int s = 50;                        // Y coordinate
+    int s = 46;                        // Y coordinate
     u8g2.drawStr(r, s, "PID");
+    int p1w = 106;  // X coordinate
+    int q1w = 53;   // Y coordinate
+    u8g2.setCursor(p1w, q1w);
+    u8g2.print(timeRUN);
 
-  
 
   //ตรวจสอบว่าอยู่ในสถานะ Run หรือไม่
       if (State_Run == 0) { //WAIT
@@ -537,11 +547,10 @@ void Run() {
         timer_RUN();
         //อ่านกราฟ
         Graph();
-        //ตรวจสอบ Run complete
-        if (TIME_COUNT >= timeRUN) {
-          State_string = 1;
-          TIME_COUNT = timeRUN;
-        }
+        // //ตรวจสอบ Run complete
+        // if (TIME_COUNT >= timeRUN) {
+        //   TIME_COUNT = timeRUN;
+        // }
       }
       else if(State_Run == 2) { //STOP
         //โค้ดจะไปรบกวนการสร้างให้หยุดลง เมื่อกด Run ระบบจะทำการบันทึกต่อไปได้เลย
@@ -551,7 +560,6 @@ void Run() {
         currentIndex =0; //รีเซ็ทค่า currentIndex เริ่มต้นใหม่
         clearGraph();
         State_Run = 0;
-        State_string = 0;
       }
 
 } while (u8g2.nextPage());
@@ -584,14 +592,7 @@ void timer_RUN() {
     } 
     last_time = millis();  //เซฟเวลาปัจจุบันไว้เพื่อรอจนกว่า millis() จะมากกว่าตัวมันเท่า period
   }
-  // if (TIME_COUNT >= timeRUN) {
-  //   State_string = true;
-  //   TIME_COUNT = timeRUN;
-    
-  // }
 }
-
-
 
 void Graph() { //กราฟ scatter plot
   for (int igraph = 0; igraph < timeRUN; igraph++) {
