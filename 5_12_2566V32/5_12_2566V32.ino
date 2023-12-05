@@ -15,6 +15,7 @@ IPAddress subnetIP(255, 255, 255, 0);
 WebServer server(80);
 
 ///////////////////////////ส่วนแสดง LCD/////////////////////////////////////
+#include <PID_v1.h>
 #include <Arduino.h>
 #include <U8g2lib.h>
 
@@ -30,11 +31,11 @@ U8G2_ST7920_128X64_F_SW_SPI u8g2(U8G2_R0, /* clock=*/18, /* data=*/23, /* CS=*/5
 //loading bar
 int boxlong = 0;
 
-//Read temp
-float READTEMP;
+//Read temp ทุก 1 นาที
+float READTEMP_ONE;
 
 //อ่าน EEPROM เก็บเพื่ใช้เป็นค่า setting
-float methodRUN;
+//float methodRUN;
 int timeRUN;
 float temCRUN;
 
@@ -45,12 +46,31 @@ int State_Run = 0;
 unsigned long last_time = 0;
 unsigned long period = 500;  //ระยะเวลาที่ต้องการรอ 1 นาที (1000 * 60)
 int TIME_COUNT = 0;
+//Realtime TEMP
+unsigned long last_timeRead = 0;
+unsigned long period2 = 1000;
 
 //Set Line graph
 float temperature[90];  // Array to store temperature values
 int currentIndex;   // Index to keep track of the current position in the array
 int igraph;
 
+//Buzzer
+#define BUZZER_PIN 13  // กำหนดขาที่เชื่อมต่อกับ buzzer
+
+// Control parameters for PID
+double READTEMP, Output, methodRUN;
+double Kp = 20; // Proportional gain 40
+double Ki = 4; // Integral gain 3
+double Kd = 0.5; // Derivative gain 1
+PID myPID(&READTEMP, &Output, &methodRUN,Kp,Ki,Kd,P_ON_M, DIRECT);
+
+// TEMP DS18B20
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#define ONE_WIRE_BUS 2
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
 
 /////////////////////////////////WIFI//////////////////////////////////////
 // Function to write a string to EEPROM
@@ -162,6 +182,7 @@ void handleThirdPage() {
   html += "</select><br><br>";
   html += "<label for='time' style='font-size: 24px;'>Choose a time: </label>";
   html += "<select name='time' id='time' style='font-size: 24px;'>";
+  html += "<option value='2'>self test 2 min</option>";
   html += "<option value='30'>30 min</option>";
   html += "<option value='60'>60 min</option>";
   html += "<option value='90'>90 min</option>";
@@ -334,6 +355,14 @@ void setup(void) {
 
   EEPROM.begin(512);  // Begin with EEPROM size
 
+  pinMode(BUZZER_PIN, OUTPUT);  // กำหนดขา BUZZER_PIN เป็นขา output
+
+  // Initialize PID control
+  myPID.SetMode(AUTOMATIC);
+
+  // อ่านอุณหภูมิ DS18B20 Start up the library
+  sensors.begin();
+
   //wifi
   Serial.begin(115200);
   Serial.println("Access Point IP address: " + WiFi.softAPIP().toString());
@@ -420,9 +449,23 @@ void loop(void) {
 
      //Run program
     Run();
-    Serial.println(State_Run);
-
+    //Serial.println(State_Run);
     
+    //อ่านอุณหภูมิ
+    sensors.requestTemperatures(); // Send the command to get temperatures
+    float tempC = sensors.getTempCByIndex(0);
+
+    // Check if reading was successful
+    if (!isnan(tempC)) {  // ตรวจสอบว่าค่าไม่ใช่ NaN
+      READTEMP = tempC; //ส่งค่าที่ทำการวัด
+    }
+
+    //อ่านอุณหภูมิทุก 1 นาที
+    unsigned long periodTemp = 1000; // ระยะเวลาที่ต้องการรอ
+    static unsigned long last_timeTemp = 0; // ประกาศตัวแปรเป็น static เพื่อเก็บค่าไว้ไม่ให้ reset จากการวน loop
+        if (millis() - last_timeTemp > periodTemp) {
+          last_timeTemp = READTEMP;
+        }
   }
 }
 
@@ -506,7 +549,7 @@ void Run() {
     int l = 106;                       // X coordinate
     int m = 18;                        // Y coordinate
     u8g2.drawStr(l, m, "Time");
-    int n = 114;  // X coordinate
+    int n = 113;  // X coordinate
     int o = 25;   // Y coordinate
     u8g2.setCursor(n, o);
     u8g2.print(TIME_COUNT);
@@ -522,10 +565,10 @@ void Run() {
     int r = 106;                       // X coordinate
     int s = 46;                        // Y coordinate
     u8g2.drawStr(r, s, "PID");
-    int p1w = 113;  // X coordinate
+    int p1w = 107;  // X coordinate
     int q1w = 53;   // Y coordinate
     u8g2.setCursor(p1w, q1w);
-    u8g2.print(timeRUN);
+    u8g2.print(Output);
 
 
   //ตรวจสอบว่าอยู่ในสถานะ Run หรือไม่
@@ -560,29 +603,39 @@ void Run() {
 }
 
 void timer_wait(){
-  if (millis() - last_time > period) {
+  if (millis() - last_timeRead > period2) {
     TIME_COUNT = 0;
-    //ทดสอบ random ค่า
-    READTEMP = random(500, 660) / 10.0;
-    last_time = millis();  //เซฟเวลาปัจจุบันไว้เพื่อรอจนกว่า millis() จะมากกว่าตัวมันเท่า period
-  } 
+    last_timeRead = millis();  //เซฟเวลาปัจจุบันไว้เพื่อรอจนกว่า millis() จะมากกว่าตัวมันเท่า period
+  }
+  
+
 }
 
 void timer_RUN() {
   if (millis() - last_time > period) {
-    //ทดสอบ random ค่า
-    READTEMP = random(500, 660) / 10.0;
-
+    
     TIME_COUNT++;
 
     //ส่วนสร้างกราฟ
     if (currentIndex < timeRUN){ //เก็บค่าแค่ 90 ค่าเท่านั้น
       currentIndex++;
-      
       //Serial.println(currentIndex);
+
     //ทดสอบ random ค่า
     temperature[currentIndex] = READTEMP;  // Replace with actual sensor reading
+
+    // Compute PID control
+    myPID.Compute();
+    
     } 
+
+    //Buzzer
+    if (TIME_COUNT <= 3){
+      tone(BUZZER_PIN, 1000, 250);  // สร้างเสียงที่ความถี่ 1000 Hz และยาว 1 วินาที
+    }else if(TIME_COUNT >= (timeRUN - 5) && TIME_COUNT <= timeRUN){
+      tone(BUZZER_PIN, 1000, 250);  // สร้างเสียงที่ความถี่ 1000 Hz และยาว 1 วินาที
+    }
+
     last_time = millis();  //เซฟเวลาปัจจุบันไว้เพื่อรอจนกว่า millis() จะมากกว่าตัวมันเท่า period
   }
 }
