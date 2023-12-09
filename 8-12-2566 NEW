@@ -62,8 +62,8 @@ int Buzzer_count;
 
 // Control parameters for PID
 double READTEMP, Output, methodRUN;
-double Kp = 20; // Proportional gain 40
-double Ki = 4; // Integral gain 3
+double Kp = 20; // Proportional gain 2
+double Ki = 4; // Integral gain 5
 double Kd = 0.5; // Derivative gain 1
 PID myPID(&READTEMP, &Output, &methodRUN,Kp,Ki,Kd,P_ON_M, DIRECT);
 
