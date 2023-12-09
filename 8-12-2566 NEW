@@ -58,7 +58,7 @@ int igraph;
 
 //Buzzer
 #define BUZZER_PIN 13  // กำหนดขาที่เชื่อมต่อกับ buzzer
-int Buzzer_count = 0;
+int Buzzer_count;
 
 // Control parameters for PID
 double READTEMP, Output, methodRUN;
@@ -362,6 +362,7 @@ void setup(void) {
   EEPROM.begin(512);  // Begin with EEPROM size
 
   pinMode(BUZZER_PIN, OUTPUT);  // กำหนดขา BUZZER_PIN เป็นขา output
+  Buzzer_count = 0;
 
   // Initialize PID control
   myPID.SetMode(AUTOMATIC);
