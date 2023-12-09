@@ -14,7 +14,7 @@
 Adafruit_MAX31855 thermocouple(MAXCLK, MAXCS, MAXDO);
 
 // Peltier setup
-int peltierPin = 3; // Digital pin connected to the Peltier module
+int peltierPin = 3; // PWM control-Digital pin connected to the Peltier module
 
 //FAN pin (PWM control)
 int fanPin = 8;  
