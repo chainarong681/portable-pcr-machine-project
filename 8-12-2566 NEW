@@ -357,7 +357,7 @@ void setup(void) {
 
   //หน้าสอง
   Page2();
-  delay(5000);  // รอ 1 วินาที
+  delay(5000);  // รอ 5 วินาที
 
   EEPROM.begin(512);  // Begin with EEPROM size
 
@@ -371,15 +371,15 @@ void setup(void) {
   sensors.begin();
   //ลดระยะเวลาการอ่านอุณหภูมิให้สั้นลง
   //sensors.setWaitForConversion(false);
-  sensors.setResolution(9); // Set the resolution to 9-bit
+  //sensors.setResolution(9); // Set the resolution to 9-bit
 
   //Peltier
   pinMode(peltierPin, OUTPUT); //Peltier output
 
   //wifi
   Serial.begin(115200);
-  Serial.println("Access Point IP address: " + WiFi.softAPIP().toString());
-  Serial.println("HTTP server started");
+  //Serial.println("Access Point IP address: " + WiFi.softAPIP().toString());
+  //Serial.println("HTTP server started");
 }
 
 /////////////////////////////////LCD//////////////////////////////////////
@@ -469,7 +469,7 @@ void loop(void) {
       READTEMP = tempC; //ส่งค่าที่ทำการวัด
     }
 
-    //อ่านอุณหภูมิทุก 1 นาที
+    //อ่านอุณหภูมิทุก 1 วินาที
     unsigned long periodTemp = 1000; // ระยะเวลาที่ต้องการรอ
     static unsigned long last_timeTemp = 0; // ประกาศตัวแปรเป็น static เพื่อเก็บค่าไว้ไม่ให้ reset จากการวน loop
         if (millis() - last_timeTemp > periodTemp) {
@@ -479,6 +479,9 @@ void loop(void) {
     //Run program
     Run();
     //Serial.println(State_Run);
+
+    // Compute PID control
+    myPID.Compute();
     
     //Peltier heat
     if (TIME_COUNT <= timeRUN && State_Run == 1) {
@@ -595,10 +598,11 @@ void Run() {
   //ตรวจสอบว่าอยู่ในสถานะ Run หรือไม่
       if (State_Run == 0) { //WAIT
         //Set time เท่ากับ 0
-        TIME_COUNT = 0;     
-      } else if(State_Run == 1) { //RUN
         // Compute PID control
           myPID.Compute();
+      } else if(State_Run == 1) { //RUN
+        // Compute PID control
+          //myPID.Compute();
         //Time Run
         timer_RUN();
         //อ่านกราฟ
