@@ -479,6 +479,9 @@ void loop(void) {
         Serial.println(last_timeTemp);
     }
 
+    // Compute PID control
+      myPID.Compute();
+
     //Run program
     Run();
     //Serial.println(State_Run);
@@ -600,8 +603,6 @@ void Run() {
         //Set time เท่ากับ 0
         TIME_COUNT = 0;  
       } else if(State_Run == 1) { //RUN
-        // Compute PID control
-          myPID.Compute();
         //Buzzer
           Buzzer();
         //Time Run
