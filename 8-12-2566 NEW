@@ -62,7 +62,7 @@ int igraph;
 
 //Buzzer
 #define BUZZER_PIN 13  // กำหนดขาที่เชื่อมต่อกับ buzzer
-int Buzzer_count;
+int Buzzer_count = 0;
 
 // Control parameters for PID
 double READTEMP, Output, methodRUN;
@@ -140,7 +140,6 @@ void handleSecondPage() {
 
   // เพิ่มปุ่ม Start Run และ Stop Run
   html += "<button style='font-size: 24px; background-color: lightblue;' onclick='startRun()'>Start Run</button> ";
-  html += "<button style='font-size: 24px; background-color: lightcoral;' onclick='stopRun()'>Stop Run</button> ";
   html += "<button style='font-size: 24px; background-color: lightyellow;' onclick='resetRun()'>Reset Run</button> ";
   html += "<script>";
   html += "function startRun() {";
@@ -152,16 +151,7 @@ void handleSecondPage() {
   html += "      });";
   html += "  }";
   html += "}";
-  html += "function stopRun() {";
-  html += "  if (confirm('Are you sure you want to stop?')) {";
-  html += "    fetch('/stopRun', { method: 'POST' })";
-  html += "      .then(response => response.json())";
-  html += "      .then(data => {";
-  html += "        console.log('State_Run updated:', data.State_Run);";
-  html += "      });";
-  html += "  }";
-  html += "}";
-    html += "function resetRun() {";
+  html += "function resetRun() {";
   html += "  if (confirm('Are you sure you want to reset Run?')) {";
   html += "    fetch('/resetRun', { method: 'POST' })";
   html += "      .then(response => response.json())";
@@ -323,11 +313,6 @@ void setup(void) {
   server.send(200, "application/json", "{\"State_Run\": 1}");
   });
 
-  server.on("/stopRun", HTTP_POST, [](){
-    State_Run = 2; // ตั้งค่า State_Run เมื่อได้รับ request
-    server.send(200, "application/json", "{\"State_Run\": 2}");
-  });
-
   server.on("/resetRun", HTTP_POST, [](){
     State_Run = 4; // ตั้งค่า State_Run เมื่อได้รับ request
     server.send(200, "application/json", "{\"State_Run\": 4}");
@@ -479,9 +464,6 @@ void loop(void) {
         Serial.println(last_timeTemp);
     }
 
-    // Compute PID control
-      myPID.Compute();
-
     //Run program
     Run();
     //Serial.println(State_Run);
@@ -531,12 +513,6 @@ void Run() {
       int j = 8;                               // Y coordinate
       u8g2.drawStr(i, j, "-->RUN");  
     }
-    if (State_Run == 2) {
-      u8g2.setFont(u8g2_font_squeezed_b6_tr);  // Use a bold font, you can choose a different one if needed
-      int i = 90;                              // X coordinate
-      int j = 8;                               // Y coordinate
-      u8g2.drawStr(i, j, "-->STOP");
-    } 
 
     //ส่วนแสดงกราฟ
     //ตัวเลข เลเบล
@@ -605,10 +581,16 @@ void Run() {
       } else if(State_Run == 1) { //RUN
         //Buzzer
           Buzzer();
+
+        // Compute PID control
+          myPID.Compute();
+
         //Time Run
           timer_RUN();
+
         //อ่านกราฟ
           Graph();
+
         //ตรวจสอบ Run complete
         if (TIME_COUNT >= timeRUN) {
           TIME_COUNT = timeRUN;
@@ -618,15 +600,20 @@ void Run() {
           u8g2.drawStr(i1, j1, "END");
         }
       }
-      else if(State_Run == 2) { //STOP
-        //โค้ดจะไปรบกวนการสร้างให้หยุดลง เมื่อกด Run ระบบจะทำการบันทึกต่อไปได้เลย
-       
-      }
       else if(State_Run == 4) { //Reset
         currentIndex =0; //รีเซ็ทค่า currentIndex เริ่มต้นใหม่
         clearGraph();
         State_Run = 0;
         Buzzer_count = 0;
+
+        // Reset ESP32
+          //ESP.restart();
+
+        //RESET PID output
+          myPID.SetMode(MANUAL);
+          Output = 0;
+          myPID.SetMode(AUTOMATIC);
+
       }
 
 } while (u8g2.nextPage());
