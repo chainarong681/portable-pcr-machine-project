@@ -34,8 +34,8 @@ int boxlong = 0;
 //Read temp ทุก 1 นาที
 float READTEMP_ONE;
 
-//อ่าน EEPROM เก็บเพื่ใช้เป็นค่า setting
-//float methodRUN;
+//อ่าน EEPROM เก็บเพื่อใช้เป็นค่า setting
+//float methodRUN; //ย้ายไปใช้ที่ PID
 int timeRUN;
 float temCRUN;
 
@@ -469,7 +469,7 @@ void loop(void) {
 
     // Check if reading was successful
     if (!isnan(tempC)) {  // ตรวจสอบว่าค่าไม่ใช่ NaN
-      READTEMP = tempC; //ส่งค่าที่ทำการวัด
+      READTEMP = tempC + temCRUN; //ส่งค่าที่ทำการวัด
     }
 
     //อ่านอุณหภูมิทุก X นาที แสดงที่จอ
