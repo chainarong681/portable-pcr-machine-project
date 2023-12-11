@@ -19,7 +19,7 @@ int peltierPin = 3; // PWM control-Digital pin connected to the Peltier module
 //FAN pin (PWM control)
 int fanPin = 8;  
 
-// Setpoint temperatures
+// Setpoint temperatures.
 double WARM_TEMP = 40.0; // Desired setpoint temperatures in Celsius
 double RT_TEMP = 50.0; // Desired setpoint temperatures in Celsius
 double INITIAL_DENATURE_TEMP = 94.0; // Desired setpoint temperatures in Celsius
