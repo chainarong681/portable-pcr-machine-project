@@ -68,7 +68,7 @@ int Buzzer_count = 0;
 double READTEMP, Output, methodRUN;
 double Kp = 1; // Proportional gain 2
 double Ki = 0.5; // Integral gain 5
-double Kd = 0; // Derivative gain 1
+double Kd = 0.5; // Derivative gain 1
 PID myPID(&READTEMP, &Output, &methodRUN,Kp,Ki,Kd,P_ON_M, DIRECT);
 
 // TEMP DS18B20
