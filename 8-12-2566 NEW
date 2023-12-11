@@ -128,19 +128,24 @@ void handleSecondPage() {
   String html = "<html><body>";
   html += "<button style='font-size: 30px; background-color: lightgreen;' onclick='goToRoot()'>Back</button>";
   html += "<h1>Project NANO Run:</h1>";
-
+  html += "<p style='font-size: 28px; color: red;'>Read Temp: " + String(last_timeTemp) + "</p>";
+  html += "<p style='font-size: 28px;'>Remaining time: " + String(TIME_COUNT) + "</p>";
   // Read values from EEPROM
   String method = readStringFromEEPROM(0);
   String time = readStringFromEEPROM(5);
   String tempC = readStringFromEEPROM(10);
 
-  html += "<p style='font-size: 28px;'>Run method: " + method + "</p>";
-  html += "<p style='font-size: 28px;'>Run time: " + time + "</p>";
-  html += "<p style='font-size: 28px;'>Temp Correction: " + tempC + "</p>";
+  // html += "<p style='font-size: 28px;'>Run method: " + method + "</p>";
+  // html += "<p style='font-size: 28px;'>Run time: " + time + "</p>";
+  // html += "<p style='font-size: 28px;'>Temp Correction: " + tempC + "</p>";
+  
+  //เชื่อมต่อข้อความ
+  html += "<p style='font-size: 28px;'>Run method: " + method + " \n" + ", Run time: " + time + " \n" + ", Temp Correction: " + tempC + "</p>";
+
 
   // เพิ่มปุ่ม Start Run และ Stop Run
-  html += "<button style='font-size: 24px; background-color: lightblue;' onclick='startRun()'>Start Run</button> ";
-  html += "<button style='font-size: 24px; background-color: lightyellow;' onclick='resetRun()'>Reset Run</button> ";
+  html += "<button style='font-size: 28px; background-color: lightblue;' onclick='startRun()'>Start Run</button> ";
+  html += "<button style='font-size: 28px; background-color: lightyellow;' onclick='resetRun()'>Reset Run</button> ";
   html += "<script>";
   html += "function startRun() {";
   html += "  if (confirm('Are you sure to start RUN?')) {";
@@ -622,7 +627,7 @@ void Run() {
 
 void Buzzer(){
    if (millis() - last_timeRead > period2) {
-    if (Buzzer_count <=2 && TIME_COUNT < 1){
+    if (Buzzer_count <=2 && TIME_COUNT < 2){
       Buzzer_count ++;
       //Buzzer
       tone(BUZZER_PIN, 1000, 200);  // สร้างเสียงที่ความถี่ 1000 Hz และยาว 0.2 วินาที
