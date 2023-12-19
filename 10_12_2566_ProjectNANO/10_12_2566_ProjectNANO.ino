@@ -79,7 +79,7 @@ OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
 // Peltier setup
-int peltierPin = 25; // Digital pin connected to the Peltier module
+int peltierPin = 33; // Digital pin connected to the Peltier module
 
 /////////////////////////////////WIFI//////////////////////////////////////
 // Function to write a string to EEPROM
