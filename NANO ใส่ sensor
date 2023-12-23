@@ -44,7 +44,7 @@ int State_Run = 0;
 
 //ประกาศตัวแปรเป็น global เพื่อเก็บค่าไว้ไม่ให้ reset จากการวนloop
 unsigned long last_time = 0;
-unsigned long period = 60000;  //ระยะเวลาที่ต้องการรอ 1 นาที (1000 * 60)
+unsigned long period = 1000;  //ระยะเวลาที่ต้องการรอ 1 นาที (1000 * 60)
 int TIME_COUNT = 0;
 //Buzzer time count
 unsigned long last_timeRead = 0;
@@ -58,7 +58,6 @@ float last_timeTemp;
 //Set Line graph
 float temperature[90];  // Array to store temperature values
 int currentIndex;   // Index to keep track of the current position in the array
-int igraph;
 
 //Buzzer
 #define BUZZER_PIN 13  // กำหนดขาที่เชื่อมต่อกับ buzzer
@@ -725,14 +724,30 @@ void timer_RUN() {
   }
 }
 
-void Graph() { //กราฟ scatter plot
-  for (int igraph = 0; igraph < timeRUN; igraph++) {
-    int yPos1 = map(temperature[igraph], 25, 160, 55, 10);  
+// void Graph() { //กราฟ scatter plot
+//   for (int igraph = 0; igraph < timeRUN; igraph++) {
+//     int yPos1 = map(temperature[igraph], 25, 160, 55, 10);  
+//     int yPos2 = map(temperature[igraph + 1], 25, 160, 55, 10);
+
+//     // ใช้ u8g2.drawHLine() แทน u8g2.drawLine() หรือลองใช้คำสั่งวาดเส้น曲จากศูนย์กลาง
+//     u8g2.drawHLine(12 + igraph, yPos1, 1); 
+//   }
+// }
+
+// กราฟเส้นแนวตั้ง
+void Graph() {
+  // วนลูปเพื่อวาดกราฟเส้น
+  for (int igraph = 0; igraph < timeRUN - 1; igraph++) {
+    // คำนวณตำแหน่ง y สำหรับกราฟเส้นทั้งสอง
+    int yPos1 = map(temperature[igraph], 25, 160, 55, 10);
     int yPos2 = map(temperature[igraph + 1], 25, 160, 55, 10);
 
-    // ใช้ u8g2.drawHLine() แทน u8g2.drawLine() หรือลองใช้คำสั่งวาดเส้น曲จากศูนย์กลาง
-    u8g2.drawHLine(12 + igraph, yPos1, 1); 
+    // วาดเส้นระหว่างจุด (12 + igraph, yPos1) ถึง (13 + igraph, yPos2)
+    u8g2.drawLine(12 + igraph, yPos1, 13 + igraph, yPos2);
   }
+
+  // ส่งข้อมูลไปยังจอ OLED
+  u8g2.sendBuffer();
 }
 
 void clearGraph() { //เคลียร์หน้าจอ
