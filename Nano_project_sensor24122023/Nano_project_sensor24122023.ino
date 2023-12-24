@@ -545,20 +545,20 @@ void Run() {
 
     //ส่วนแสดงกราฟ
     //ตัวเลข เลเบล
-    u8g2.setFont(u8g2_font_4x6_mn);  // Use a bold font, you can choose a different one if needed
+    u8g2.setFont(u8g2_font_fourmat_te);  // Use a bold font, you can choose a different one if needed
     // Set the position to display "Project NANO" on the screen
     int n1 = 1;  // X coordinate
     int b1 = 53;  // Y coordinate
-    u8g2.drawStr(n1, b1, "40");
+    u8g2.drawStr(n1, b1, "50");
     int n2 = 1;  // X coordinate
     int b2 = 43;  // Y coordinate
-    u8g2.drawStr(n2, b2, "70");
+    u8g2.drawStr(n2, b2, "100");
     int n3 = 1;  // X coordinate
     int b3 = 33;  // Y coordinate
-    u8g2.drawStr(n3, b3, "100");
+    u8g2.drawStr(n3, b3, "150");
     int n4 = 1;  // X coordinate
     int b4 = 23;  // Y coordinate
-    u8g2.drawStr(n4, b4, "130");
+    u8g2.drawStr(n4, b4, "200");
 
     //วาดแกน
     // วาดเส้นแนวตั้งที่ตำแหน่ง x=5, y=10, ความยาว 50 pixel
@@ -739,8 +739,8 @@ void Graph() {
   // วนลูปเพื่อวาดกราฟเส้น
   for (int igraph = 0; igraph < timeRUN - 1; igraph++) {
     // คำนวณตำแหน่ง y สำหรับกราฟเส้นทั้งสอง
-    int yPos1 = map(temperature[igraph], 25, 160, 55, 10);
-    int yPos2 = map(temperature[igraph + 1], 25, 160, 55, 10);
+    int yPos1 = map(temperature[igraph], 25, 250, 55, 10);
+    int yPos2 = map(temperature[igraph + 1], 25, 250, 55, 10);
 
     // วาดเส้นระหว่างจุด (12 + igraph, yPos1) ถึง (13 + igraph, yPos2)
     u8g2.drawLine(12 + igraph, yPos1, 13 + igraph, yPos2);
