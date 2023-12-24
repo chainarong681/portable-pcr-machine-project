@@ -90,6 +90,9 @@ Adafruit_AS7341 as7341;
 int NM480; //ค่าอ่านที่ 480 nm
 int NM515; //ค่าอ่านที่ 515 nm
 
+//คำนวนค่า CT
+float CT_value;
+
 /////////////////////////////////WIFI//////////////////////////////////////
 // Function to write a string to EEPROM
 void writeStringToEEPROM(int addr, const String &str) {
@@ -692,6 +695,7 @@ void timer_RUN() {
     NM515 = as7341.getChannel(AS7341_CHANNEL_515nm_F4);
 
     temperature[currentIndex] = NM515;
+
     if (!as7341.readAllChannels()){
       Serial.println("Error reading all channels!");
       return;
@@ -718,8 +722,46 @@ void timer_RUN() {
     // Serial.println(as7341.getChannel(AS7341_CHANNEL_CLEAR));
     // Serial.print("Near IR  : ");
     // Serial.println(as7341.getChannel(AS7341_CHANNEL_NIR));
-
     }
+
+    //คำนวนค่า Standard deviation และค่า Mean จำนวน 10 ครั้งแรกที่อ่านผล คำนวนจากครั้งที่ 2 ถึง 11
+        if (currentIndex >= 11) {
+          // Calculate mean
+          float mean = 0.0;
+          for (int i = 2; i <= 11; i++) {
+            mean += temperature[i];
+          }
+          mean /= 10;
+
+          // Calculate standard deviation
+          float sumSquaredDiff = 0.0;
+          for (int j = 2; j <= 11; j++) {
+            sumSquaredDiff += pow(temperature[j] - mean, 2);
+          }
+          float standardDeviation = sqrt(sumSquaredDiff / 9); // N-1
+
+          // Find maximum temperature
+          float maxTemperature = temperature[2];
+          for (int k = 3; k <= 11; k++) {
+            if (temperature[k] > maxTemperature) {
+              maxTemperature = temperature[k];
+            }
+          }
+
+          //คำนวน CT จาก 3SD + ค่า MAX จากเวลนาทีที่ 2 ถึง 11
+          CT_value = maxTemperature + (standardDeviation * 3);
+
+          // Print mean, standard deviation, and maximum temperature
+          Serial.print("Mean: ");
+          Serial.println(mean);
+          Serial.print("Standard Deviation: ");
+          Serial.println(standardDeviation);
+          Serial.print("Maximum Temperature: ");
+          Serial.println(maxTemperature);
+          Serial.print("CT: ");
+          Serial.println(CT_value);
+      }    
+
     last_time = millis();  //เซฟเวลาปัจจุบันไว้เพื่อรอจนกว่า millis() จะมากกว่าตัวมันเท่า period
   }
 }
@@ -736,8 +778,9 @@ void timer_RUN() {
 
 // กราฟเส้นแนวตั้ง
 void Graph() {
+
   // วนลูปเพื่อวาดกราฟเส้น
-  for (int igraph = 0; igraph < timeRUN - 1; igraph++) {
+  for (int igraph = 0; igraph < timeRUN; igraph++) {
     // คำนวณตำแหน่ง y สำหรับกราฟเส้นทั้งสอง
     int yPos1 = map(temperature[igraph], 25, 250, 55, 10);
     int yPos2 = map(temperature[igraph + 1], 25, 250, 55, 10);
@@ -745,9 +788,16 @@ void Graph() {
     // วาดเส้นระหว่างจุด (12 + igraph, yPos1) ถึง (13 + igraph, yPos2)
     u8g2.drawLine(12 + igraph, yPos1, 13 + igraph, yPos2);
   }
+  //สร้างเส้น CT
+  if (currentIndex >= 11) {
+    // ตำแหน่งเริ่มต้นของเส้นตรง
+    int startX = 13;
+    int endX = 104;
+    int targetY = map(CT_value, 25, 250, 55, 10); // แปลงค่า CT_value เป็นระหว่าง 10 ถึง 55
+    // วาดเส้นตรง
+    u8g2.drawLine(startX, targetY, endX, targetY);
+  }
 
-  // ส่งข้อมูลไปยังจอ OLED
-  u8g2.sendBuffer();
 }
 
 void clearGraph() { //เคลียร์หน้าจอ
