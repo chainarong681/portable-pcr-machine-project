@@ -44,7 +44,7 @@ int State_Run = 0;
 
 //ประกาศตัวแปรเป็น global เพื่อเก็บค่าไว้ไม่ให้ reset จากการวนloop
 unsigned long last_time = 0;
-unsigned long period = 1000;  //ระยะเวลาที่ต้องการรอ 1 นาที (1000 * 60)
+unsigned long period = 60000;  //ระยะเวลาที่ต้องการรอ 1 นาที (1000 * 60)
 int TIME_COUNT = 0;
 //Buzzer time count
 unsigned long last_timeRead = 0;
@@ -65,9 +65,9 @@ int Buzzer_count = 0;
 
 // Control parameters for PID
 double READTEMP, Output, methodRUN;
-double Kp = 1; // Proportional gain 2
-double Ki = 0.5; // Integral gain 5
-double Kd = 0.5; // Derivative gain 1
+double Kp = 1; // Proportional gain 2 , 1
+double Ki = 0.5; // Integral gain 5 , 0.5
+double Kd = 0.5; // Derivative gain 1 , 0.5
 PID myPID(&READTEMP, &Output, &methodRUN,Kp,Ki,Kd,P_ON_M, DIRECT);
 
 // TEMP DS18B20
@@ -89,6 +89,9 @@ int ledBluePin = 12;
 Adafruit_AS7341 as7341;
 int NM480; //ค่าอ่านที่ 480 nm
 int NM515; //ค่าอ่านที่ 515 nm
+
+//คำนวนค่า CT
+float CT_value;
 
 /////////////////////////////////WIFI//////////////////////////////////////
 // Function to write a string to EEPROM
@@ -545,20 +548,20 @@ void Run() {
 
     //ส่วนแสดงกราฟ
     //ตัวเลข เลเบล
-    u8g2.setFont(u8g2_font_4x6_mn);  // Use a bold font, you can choose a different one if needed
+    u8g2.setFont(u8g2_font_fourmat_te);  // Use a bold font, you can choose a different one if needed
     // Set the position to display "Project NANO" on the screen
     int n1 = 1;  // X coordinate
     int b1 = 53;  // Y coordinate
-    u8g2.drawStr(n1, b1, "40");
+    u8g2.drawStr(n1, b1, "50");
     int n2 = 1;  // X coordinate
     int b2 = 43;  // Y coordinate
-    u8g2.drawStr(n2, b2, "70");
+    u8g2.drawStr(n2, b2, "100");
     int n3 = 1;  // X coordinate
     int b3 = 33;  // Y coordinate
-    u8g2.drawStr(n3, b3, "100");
+    u8g2.drawStr(n3, b3, "150");
     int n4 = 1;  // X coordinate
     int b4 = 23;  // Y coordinate
-    u8g2.drawStr(n4, b4, "130");
+    u8g2.drawStr(n4, b4, "200");
 
     //วาดแกน
     // วาดเส้นแนวตั้งที่ตำแหน่ง x=5, y=10, ความยาว 50 pixel
@@ -692,6 +695,7 @@ void timer_RUN() {
     NM515 = as7341.getChannel(AS7341_CHANNEL_515nm_F4);
 
     temperature[currentIndex] = NM515;
+
     if (!as7341.readAllChannels()){
       Serial.println("Error reading all channels!");
       return;
@@ -718,8 +722,46 @@ void timer_RUN() {
     // Serial.println(as7341.getChannel(AS7341_CHANNEL_CLEAR));
     // Serial.print("Near IR  : ");
     // Serial.println(as7341.getChannel(AS7341_CHANNEL_NIR));
-
     }
+
+    //คำนวนค่า Standard deviation และค่า Mean จำนวน 10 ครั้งแรกที่อ่านผล คำนวนจากครั้งที่ 2 ถึง 11
+        if (currentIndex >= 11) {
+          // Calculate mean
+          float mean = 0.0;
+          for (int i = 2; i <= 11; i++) {
+            mean += temperature[i];
+          }
+          mean /= 10;
+
+          // Calculate standard deviation
+          float sumSquaredDiff = 0.0;
+          for (int j = 2; j <= 11; j++) {
+            sumSquaredDiff += pow(temperature[j] - mean, 2);
+          }
+          float standardDeviation = sqrt(sumSquaredDiff / 9); // N-1
+
+          // Find maximum temperature
+          float maxTemperature = temperature[2];
+          for (int k = 3; k <= 11; k++) {
+            if (temperature[k] > maxTemperature) {
+              maxTemperature = temperature[k];
+            }
+          }
+
+          //คำนวน CT จาก 3SD + ค่า MAX จากเวลนาทีที่ 2 ถึง 11
+          CT_value = maxTemperature + (standardDeviation * 3);
+
+          // Print mean, standard deviation, and maximum temperature
+          Serial.print("Mean: ");
+          Serial.println(mean);
+          Serial.print("Standard Deviation: ");
+          Serial.println(standardDeviation);
+          Serial.print("Maximum Temperature: ");
+          Serial.println(maxTemperature);
+          Serial.print("CT: ");
+          Serial.println(CT_value);
+      }    
+
     last_time = millis();  //เซฟเวลาปัจจุบันไว้เพื่อรอจนกว่า millis() จะมากกว่าตัวมันเท่า period
   }
 }
@@ -736,18 +778,26 @@ void timer_RUN() {
 
 // กราฟเส้นแนวตั้ง
 void Graph() {
+
   // วนลูปเพื่อวาดกราฟเส้น
-  for (int igraph = 0; igraph < timeRUN - 1; igraph++) {
+  for (int igraph = 0; igraph < timeRUN; igraph++) {
     // คำนวณตำแหน่ง y สำหรับกราฟเส้นทั้งสอง
-    int yPos1 = map(temperature[igraph], 25, 160, 55, 10);
-    int yPos2 = map(temperature[igraph + 1], 25, 160, 55, 10);
+    int yPos1 = map(temperature[igraph], 25, 250, 55, 10);
+    int yPos2 = map(temperature[igraph + 1], 25, 250, 55, 10);
 
     // วาดเส้นระหว่างจุด (12 + igraph, yPos1) ถึง (13 + igraph, yPos2)
-    u8g2.drawLine(12 + igraph, yPos1, 13 + igraph, yPos2);
+    u8g2.drawLine(13 + igraph, yPos1, 14 + igraph, yPos2);
+  }
+  //สร้างเส้น CT
+  if (currentIndex >= 11) {
+    // ตำแหน่งเริ่มต้นของเส้นตรง
+    int startX = 13;
+    int endX = 104;
+    int targetY = map(CT_value, 25, 250, 55, 10); // แปลงค่า CT_value เป็นระหว่าง 10 ถึง 55
+    // วาดเส้นตรง
+    u8g2.drawLine(startX, targetY, endX, targetY);
   }
 
-  // ส่งข้อมูลไปยังจอ OLED
-  u8g2.sendBuffer();
 }
 
 void clearGraph() { //เคลียร์หน้าจอ
