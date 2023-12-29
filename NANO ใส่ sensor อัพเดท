@@ -87,8 +87,14 @@ int ledBluePin = 12;
 #include <Wire.h>
 #include <Adafruit_AS7341.h>
 Adafruit_AS7341 as7341;
+int NM415; //ค่าอ่านที่ 415 nm
+int NM445; //ค่าอ่านที่ 445 nm
 int NM480; //ค่าอ่านที่ 480 nm
 int NM515; //ค่าอ่านที่ 515 nm
+int NM555; //ค่าอ่านที่ 555 nm
+int NM590; //ค่าอ่านที่ 590 nm
+int NM630; //ค่าอ่านที่ 630 nm
+int NM680; //ค่าอ่านที่ 680 nm
 
 //คำนวนค่า CT
 float CT_value;
@@ -142,8 +148,7 @@ void handleSecondPage() {
   html += "<h1>Project NANO Run:</h1>";
   html += "<p style='font-size: 28px; color: red;'>Read Temp: " + String(last_timeTemp) + "</p>";
   html += "<p style='font-size: 28px;'>Remaining time: " + String(TIME_COUNT) + "</p>";
-  html += "<p style='font-size: 28px;'>480 nm Signal: " + String(NM480) + "</p>";
-  html += "<p style='font-size: 28px;'>515 nm Signal: " + String(NM515) + "</p>";
+  
   // Read values from EEPROM
   String method = readStringFromEEPROM(0);
   String time = readStringFromEEPROM(5);
@@ -154,7 +159,19 @@ void handleSecondPage() {
   // html += "<p style='font-size: 28px;'>Temp Correction: " + tempC + "</p>";
   
   //เชื่อมต่อข้อความ
-  html += "<p style='font-size: 28px;'>Run method: " + method + " \n" + ", Run time: " + time + " \n" + ", Temp Correction: " + tempC + "</p>";
+  html += "<p style='font-size: 28px;'>Run method: " + method + " \n " + ", Run time: " + time + " \n " + ", Temp Correction: " + tempC + "</p>";
+
+  //แสดงสัญญาณ
+  html += "<fieldset style='font-size: 28px;'>";
+  html += "<legend>Fluorescence channel:</legend>"; // กำหนดชื่อ GroupBox ด้วย Legend
+  html += "<p>415 nm Signal: " + String(NM415) + " | " +
+          "445 nm Signal: " + String(NM445) + " | <span style='color: green;'>480 nm Signal: " + String(NM480) + "</span></p>";
+  html += "<p><span style='color: green;'>515 nm Signal: " + String(NM515) + "</span> | " +
+          "555 nm Signal: " + String(NM555) + " | " +
+          "590 nm Signal: " + String(NM590) + "</p>";
+  html += "<p>630 nm Signal: " + String(NM630) + " | " +
+          "680 nm Signal: " + String(NM680) + "</p>";
+  html += "</fieldset><br>";
 
 
   // เพิ่มปุ่ม Start Run และ Stop Run
@@ -691,8 +708,17 @@ void timer_RUN() {
     
     //AS7341 spectrum sensor
     // Read all channels at the same time and store in as7341 object
+    NM415 = as7341.getChannel(AS7341_CHANNEL_415nm_F1);
+    NM445 = as7341.getChannel(AS7341_CHANNEL_445nm_F2);
     NM480 = as7341.getChannel(AS7341_CHANNEL_480nm_F3);
     NM515 = as7341.getChannel(AS7341_CHANNEL_515nm_F4);
+    NM555 = as7341.getChannel(AS7341_CHANNEL_555nm_F5);
+    NM590 = as7341.getChannel(AS7341_CHANNEL_590nm_F6);
+    NM630 = as7341.getChannel(AS7341_CHANNEL_630nm_F7);
+    NM680 = as7341.getChannel(AS7341_CHANNEL_680nm_F8);
+
+    
+
 
     temperature[currentIndex] = NM515;
 
@@ -724,40 +750,40 @@ void timer_RUN() {
     // Serial.println(as7341.getChannel(AS7341_CHANNEL_NIR));
     }
 
-    //คำนวนค่า Standard deviation และค่า Mean จำนวน 10 ครั้งแรกที่อ่านผล คำนวนจากครั้งที่ 2 ถึง 11
-        if (currentIndex >= 11) {
+    //คำนวนค่า Standard deviation และค่า Mean จำนวน 15 ครั้งแรกที่อ่านผล คำนวนจากครั้งที่ 2 ถึง 16 ไม่ใช้ครั้งที่ 1 เพราะค่าอาจเป็น 0 หรือไม่แน่นอน
+        if (currentIndex >= 16) {
           // Calculate mean
           float mean = 0.0;
-          for (int i = 2; i <= 11; i++) {
+          for (int i = 2; i <= 16; i++) {
             mean += temperature[i];
           }
-          mean /= 10;
+          mean /= 15;
 
           // Calculate standard deviation
           float sumSquaredDiff = 0.0;
-          for (int j = 2; j <= 11; j++) {
+          for (int j = 2; j <= 16; j++) {
             sumSquaredDiff += pow(temperature[j] - mean, 2);
           }
-          float standardDeviation = sqrt(sumSquaredDiff / 9); // N-1
+          float standardDeviation = sqrt(sumSquaredDiff / 14); // N-1
 
           // Find maximum temperature
-          float maxTemperature = temperature[2];
-          for (int k = 3; k <= 11; k++) {
-            if (temperature[k] > maxTemperature) {
-              maxTemperature = temperature[k];
-            }
-          }
+          // float maxTemperature = temperature[2];
+          // for (int k = 3; k <= 11; k++) {
+          //   if (temperature[k] > maxTemperature) {
+          //     maxTemperature = temperature[k];
+          //   }
+          // }
 
-          //คำนวน CT จาก 3SD + ค่า MAX จากเวลนาทีที่ 2 ถึง 11
-          CT_value = maxTemperature + (standardDeviation * 3);
+          //คำนวน CT จาก 3SD (99.73%) + ค่า MAX จากเวลนาทีที่ 2 ถึง 11 ==>ถ้ามากกว่า 4SD มีค่า >100%
+          CT_value = mean + (standardDeviation * 3);
 
           // Print mean, standard deviation, and maximum temperature
           Serial.print("Mean: ");
           Serial.println(mean);
           Serial.print("Standard Deviation: ");
           Serial.println(standardDeviation);
-          Serial.print("Maximum Temperature: ");
-          Serial.println(maxTemperature);
+          // Serial.print("Maximum Temperature: ");
+          // Serial.println(maxTemperature);
           Serial.print("CT: ");
           Serial.println(CT_value);
       }    
@@ -783,10 +809,13 @@ void Graph() {
   for (int igraph = 0; igraph < timeRUN; igraph++) {
     // คำนวณตำแหน่ง y สำหรับกราฟเส้นทั้งสอง
     int yPos1 = map(temperature[igraph], 25, 250, 55, 10);
-    int yPos2 = map(temperature[igraph + 1], 25, 250, 55, 10);
+    // int yPos2 = map(temperature[igraph + 1], 25, 250, 55, 10);
 
     // วาดเส้นระหว่างจุด (12 + igraph, yPos1) ถึง (13 + igraph, yPos2)
-    u8g2.drawLine(13 + igraph, yPos1, 14 + igraph, yPos2);
+    // u8g2.drawLine(13 + igraph, yPos1, 14 + igraph, yPos2);
+
+    //วาด Scatter plot
+    u8g2.drawHLine(12 + igraph, yPos1, 1);
   }
   //สร้างเส้น CT
   if (currentIndex >= 11) {
