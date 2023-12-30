@@ -555,7 +555,7 @@ void loop(void) {
 void Run() {
  u8g2.firstPage();
   do {
-    u8g2.drawFrame(0, 0, 128, 64);
+    u8g2.drawFrame(0, 0, 128, 64); //สร้างกรอปล้อมรอบหน้าที่แสดง
     u8g2.setDrawColor(1);                    // 1 for solid color
     u8g2.setFont(u8g2_font_squeezed_b6_tr);  // Use a bold font, you can choose a different one if needed
     // Set the position to display "Project NANO" on the screen
@@ -593,64 +593,64 @@ void Run() {
     //ตัวเลข เลเบล
     u8g2.setFont(u8g2_font_fourmat_te);  // Use a bold font, you can choose a different one if needed
     // Set the position to display "Project NANO" on the screen
-    int n1 = 1;  // X coordinate
+    int n1 = 2;  // X coordinate
     int b1 = 53;  // Y coordinate
     u8g2.setCursor(n1, b1);
     u8g2.print(percent20);
   
-    int n2 = 1;  // X coordinate
+    int n2 = 2;  // X coordinate
     int b2 = 43;  // Y coordinate
     u8g2.setCursor(n2, b2);
     u8g2.print(percent40);
 
-    int n3 = 1;  // X coordinate
+    int n3 = 2;  // X coordinate
     int b3 = 33;  // Y coordinate
     u8g2.setCursor(n3, b3);
     u8g2.print(percent60);
 
-    int n4 = 1;  // X coordinate
+    int n4 = 2;  // X coordinate
     int b4 = 23;  // Y coordinate
     u8g2.setCursor(n4, b4);
     u8g2.print(percent80);
 
     //วาดแกน
     // วาดเส้นแนวตั้งที่ตำแหน่ง x=5, y=10, ความยาว 50 pixel
-    u8g2.drawVLine(13, 10, 50);
+    u8g2.drawVLine(15, 10, 50);
     // วาดจุดแนวตั้งที่ตำแหน่ง x=20, y=10 และห่างกันทีละ 5 จุด
     for (int i = 0; i < 15; i++) {
-      u8g2.drawPixel(12, 10 + i * 5);
+      u8g2.drawPixel(14, 10 + i * 5);
     }
     // วาดเส้นแนวนอนที่ตำแหน่ง x=5, y=60, ความยาว 91 pixel
-    u8g2.drawHLine(13, 60, 91);
+    u8g2.drawHLine(15, 60, 91);
     // วาดจุดแนวนอนที่ตำแหน่ง x=5, y=61 และห่างกันทีละ 5 จุด
     for (int i = 0; i < 19; i++) {
-      u8g2.drawPixel(13 + i * 5, 61);
+      u8g2.drawPixel(15 + i * 5, 61);
     }
 
     //กล่อง parameter
-    u8g2.drawFrame(104, 10, 24, 53);
+    u8g2.drawFrame(105, 10, 24, 53);
     u8g2.setFont(u8g2_font_micro_mr);  // Use a bold font, you can choose a different one if needed
-    int l = 106;                       // X coordinate
+    int l = 107;                       // X coordinate
     int m = 18;                        // Y coordinate
-    u8g2.drawStr(l, m, "Time");
-    int n = 113;  // X coordinate
+    u8g2.drawStr(l, m, "Cycle");
+    int n = 114;  // X coordinate
     int o = 25;   // Y coordinate
     u8g2.setCursor(n, o);
     u8g2.print(TIME_COUNT);
 
-    int p = 106;                       // X coordinate
+    int p = 107;                       // X coordinate
     int q = 32;                        // Y coordinate
-    u8g2.drawStr(p, q, "T-Set");
-    int p1 = 113;  // X coordinate
+    u8g2.drawStr(p, q, "Time");
+    int p1 = 114;  // X coordinate
     int q1 = 39;   // Y coordinate
     u8g2.setCursor(p1, q1);
     u8g2.print(timeRUN);
 
     u8g2.setFont(u8g2_font_fourmat_tr);  // Use a bold font, you can choose a different one if needed
-    int r = 106;                       // X coordinate
+    int r = 107;                       // X coordinate
     int s = 46;                        // Y coordinate
     u8g2.drawStr(r, s, "PID");
-    int p1w = 106;  // X coordinate
+    int p1w = 107;  // X coordinate
     int q1w = 53;   // Y coordinate
     u8g2.setCursor(p1w, q1w);
     u8g2.print(Output);
@@ -837,23 +837,23 @@ void Graph() {
   }
 
   // วนลูปเพื่อวาดกราฟเส้น
-  for (int igraph = 0; igraph < timeRUN - 1; igraph++) {
+  for (int igraph = 1; igraph < timeRUN - 1; igraph++) {
     // คำนวณตำแหน่ง y สำหรับกราฟเส้นทั้งสอง
     int yPos1 = map(temperature[igraph], minTemp, maxTemp + 50, 60, 10);
-    // int yPos2 = map(temperature[igraph + 1], minTemp, maxTemp, 55, 10);
-
-    // วาดเส้นระหว่างจุด (12 + igraph, yPos1) ถึง (13 + igraph, yPos2)
-    // u8g2.drawLine(13 + igraph, yPos1, 14 + igraph, yPos2);
+    int yPos2 = map(temperature[igraph + 1], minTemp, maxTemp + 50, 60, 10);
+    
+    // วาดเส้นระหว่างจุด
+    u8g2.drawLine(15 + igraph, yPos1, 15 + igraph, yPos2);
 
     // วาด Scatter plot
-    u8g2.drawHLine(12 + igraph, yPos1, 1);
+    // u8g2.drawHLine(15 + igraph, yPos1, 1);
   }
 
   // สร้างเส้น CT
   if (currentIndex >= 16) {
     // ตำแหน่งเริ่มต้นของเส้นตรง
-    int startX = 13;
-    int endX = 104;
+    int startX = 15;
+    int endX = 105;
     int targetY = map(CT_value, minTemp, maxTemp + 50, 60, 10); // แปลงค่า CT_value เป็นระหว่าง 10 ถึง 60
     // วาดเส้นตรง
     u8g2.drawLine(startX, targetY, endX, targetY);
@@ -886,25 +886,46 @@ void runInstrument(){
 
 ///////////////////////////////////////โค้ดสร้างกราฟ///////////////////////////////////////////////////////////
 // void Graph() {
+//   // คำนวณค่า max และ min ของข้อมูล
+//   maxTemp = temperature[0];
+//   minTemp = temperature[0];
+
+//   for (int i = 1; i < timeRUN; i++) {
+//     if (temperature[i] > maxTemp) {
+//       maxTemp = temperature[i];
+//     } else if (temperature[i] < minTemp) {
+//       minTemp = temperature[i];
+//     }
+//   }
+
 //   // วนลูปเพื่อวาดกราฟเส้น
-//   for (int igraph = 0; igraph < timeRUN; igraph++) {
+//   for (int igraph = 0; igraph < timeRUN - 1; igraph++) {
 //     // คำนวณตำแหน่ง y สำหรับกราฟเส้นทั้งสอง
-//     int yPos1 = map(temperature[igraph], 25, 250, 55, 10);
-//     // int yPos2 = map(temperature[igraph + 1], 25, 250, 55, 10);
+//     int yPos1 = map(temperature[igraph], minTemp, maxTemp + 50, 60, 10);
+//     int yPos2 = map(temperature[igraph + 1], minTemp, maxTemp + 50, 60, 10);
 
 //     // วาดเส้นระหว่างจุด (12 + igraph, yPos1) ถึง (13 + igraph, yPos2)
-//     // u8g2.drawLine(13 + igraph, yPos1, 14 + igraph, yPos2);
+//     u8g2.drawLine(13 + igraph, yPos1, 14 + igraph, yPos2);
 
-//     //วาด Scatter plot
-//     u8g2.drawHLine(12 + igraph, yPos1, 1);
+//     // วาด Scatter plot
+//     // u8g2.drawHLine(12 + igraph, yPos1, 1);
 //   }
-//   //สร้างเส้น CT
-//   if (currentIndex >= 11) {
+
+//   // สร้างเส้น CT
+//   if (currentIndex >= 16) {
 //     // ตำแหน่งเริ่มต้นของเส้นตรง
 //     int startX = 13;
 //     int endX = 104;
-//     int targetY = map(CT_value, 25, 250, 55, 10); // แปลงค่า CT_value เป็นระหว่าง 10 ถึง 55
+//     int targetY = map(CT_value, minTemp, maxTemp + 50, 60, 10); // แปลงค่า CT_value เป็นระหว่าง 10 ถึง 60
 //     // วาดเส้นตรง
 //     u8g2.drawLine(startX, targetY, endX, targetY);
 //   }
+
+//   //คำนวนค่าใส่ในสเกลแกน Y จากค่า max
+//   int yvalue = maxTemp + 50;
+//   percent20 = (yvalue/5) * 1;
+//   percent40 = (yvalue/5) * 2;
+//   percent60 = (yvalue/5) * 3;
+//   percent80 = (yvalue/5) * 4;
+
 // }
