@@ -44,7 +44,7 @@ int State_Run = 0;
 
 //ประกาศตัวแปรเป็น global เพื่อเก็บค่าไว้ไม่ให้ reset จากการวนloop
 unsigned long last_time = 0;
-unsigned long period = 60000;  //ระยะเวลาที่ต้องการรอ 1 นาที (1000 * 60)
+int period;  //ระยะเวลาสร้างกราฟที่ต้องการรอ 1 นาที (1000 * 60)
 int TIME_COUNT = 0;
 //Buzzer time count
 unsigned long last_timeRead = 0;
@@ -59,15 +59,24 @@ float last_timeTemp;
 float temperature[90];  // Array to store temperature values
 int currentIndex;   // Index to keep track of the current position in the array
 
+//คำนวนค่า max และ min กำหนดสเกลของกราฟเพื่อปรับความละเอียดตามค่า
+int maxTemp;
+int minTemp;
+//คำนวนค่าใส่เลเบลแกน Y
+int percent20;
+int percent40;
+int percent60;
+int percent80;
+
 //Buzzer
 #define BUZZER_PIN 13  // กำหนดขาที่เชื่อมต่อกับ buzzer
 int Buzzer_count = 0;
 
 // Control parameters for PID
 double READTEMP, Output, methodRUN;
-double Kp = 1; // Proportional gain 2
-double Ki = 0.5; // Integral gain 5
-double Kd = 0.5; // Derivative gain 1
+double Kp = 1; // Proportional gain 2 , 1
+double Ki = 0.5; // Integral gain 5 , 0.5
+double Kd = 0.5; // Derivative gain 1 , 0.5
 PID myPID(&READTEMP, &Output, &methodRUN,Kp,Ki,Kd,P_ON_M, DIRECT);
 
 // TEMP DS18B20
@@ -87,8 +96,14 @@ int ledBluePin = 12;
 #include <Wire.h>
 #include <Adafruit_AS7341.h>
 Adafruit_AS7341 as7341;
+int NM415; //ค่าอ่านที่ 415 nm
+int NM445; //ค่าอ่านที่ 445 nm
 int NM480; //ค่าอ่านที่ 480 nm
 int NM515; //ค่าอ่านที่ 515 nm
+int NM555; //ค่าอ่านที่ 555 nm
+int NM590; //ค่าอ่านที่ 590 nm
+int NM630; //ค่าอ่านที่ 630 nm
+int NM680; //ค่าอ่านที่ 680 nm
 
 //คำนวนค่า CT
 float CT_value;
@@ -142,19 +157,34 @@ void handleSecondPage() {
   html += "<h1>Project NANO Run:</h1>";
   html += "<p style='font-size: 28px; color: red;'>Read Temp: " + String(last_timeTemp) + "</p>";
   html += "<p style='font-size: 28px;'>Remaining time: " + String(TIME_COUNT) + "</p>";
-  html += "<p style='font-size: 28px;'>480 nm Signal: " + String(NM480) + "</p>";
-  html += "<p style='font-size: 28px;'>515 nm Signal: " + String(NM515) + "</p>";
+  
   // Read values from EEPROM
   String method = readStringFromEEPROM(0);
   String time = readStringFromEEPROM(5);
   String tempC = readStringFromEEPROM(10);
+  String CycleTime = readStringFromEEPROM(40);
 
   // html += "<p style='font-size: 28px;'>Run method: " + method + "</p>";
   // html += "<p style='font-size: 28px;'>Run time: " + time + "</p>";
   // html += "<p style='font-size: 28px;'>Temp Correction: " + tempC + "</p>";
+
+  //ตั้งค่าเวลาใน 1 cycle
+  html += "<p style='font-size: 28px;'>Cycle time: " + CycleTime + "</p>";
   
   //เชื่อมต่อข้อความ
-  html += "<p style='font-size: 28px;'>Run method: " + method + " \n" + ", Run time: " + time + " \n" + ", Temp Correction: " + tempC + "</p>";
+  html += "<p style='font-size: 28px;'>Run method: " + method + " \n " + ", Run time: " + time + " \n " + ", Temp Correction: " + tempC + "</p>";
+
+  //แสดงสัญญาณ
+  html += "<fieldset style='font-size: 28px;'>";
+  html += "<legend>Fluorescence channel:</legend>"; // กำหนดชื่อ GroupBox ด้วย Legend
+  html += "<p>415 nm Signal: " + String(NM415) + " | " +
+          "445 nm Signal: " + String(NM445) + " | <span style='color: green;'>480 nm Signal: " + String(NM480) + "</span></p>";
+  html += "<p><span style='color: green;'>515 nm Signal: " + String(NM515) + "</span> | " +
+          "555 nm Signal: " + String(NM555) + " | " +
+          "590 nm Signal: " + String(NM590) + "</p>";
+  html += "<p>630 nm Signal: " + String(NM630) + " | " +
+          "680 nm Signal: " + String(NM680) + "</p>";
+  html += "</fieldset><br>";
 
 
   // เพิ่มปุ่ม Start Run และ Stop Run
@@ -205,6 +235,11 @@ void handleThirdPage() {
   html += "<option value='90'>90 min</option>";
   html += "<option value='2'>self test 2 min</option>";
   html += "</select><br><br>";
+  html += "<label for='timeCycles' style='font-size: 24px;'>Please select the data collection time per cycle: </label>";
+  html += "<select name='timeCycles' id='timeCycles' style='font-size: 24px;'>";
+  html += "<option value='60000'>60 sec</option>";
+  html += "<option value='1000'>1 sec</option>";
+  html += "</select><br><br>";
   html += "<input type='submit' value='Submit' style='font-size: 20px; width: 100px; height: 30px; background-color: yellow;'>";
   html += "</form>";
   html += "<script>function goToRoot() { window.location.href = '/'; }</script>";
@@ -214,12 +249,16 @@ void handleThirdPage() {
 }
 
 void handleThirdPageSubmit() {
+  //////////////////////////ถ้าเขียน EEPROM แล้วมีปัญหา อาจเกิดการ reset อยู่ตลอดเวลให้แก้โดยใช้โค้ดลบ EEPROM ถึง 4096 และอัพโหลดโค้ดใหม่ดดยเลือก erase all flash ด้วยโดยทำตามลำดับ
+  //////////////////////////หรือใช้วิธี ใช้โค้ดลบ EEPROM ถึง 4096 และอัพโหลดโค้ดใหม่ดดยเลือก erase all flash พร้อมกัน
   String method = server.arg("methods");
   String time = server.arg("time");
+  String timeCycle = server.arg("timeCycles");
 
   // Assuming you have enough space in EEPROM for the method and time strings
   writeStringToEEPROM(0, method);
   writeStringToEEPROM(5, time);
+  writeStringToEEPROM(40, timeCycle);
 
   // Print the saved values to Serial
   //Serial.println("Method: " + method);
@@ -478,6 +517,10 @@ void loop(void) {
       String temCRUN_EEPROM;
       EEPROM.get(10, temCRUN_EEPROM);
       temCRUN = temCRUN_EEPROM.toFloat();
+      // อ่านค่าจาก EEPROM ที่ตำแหน่ง 40 และเก็บในตัวแปล period
+      String period_EEPROM;
+      EEPROM.get(40, period_EEPROM);
+      period = period_EEPROM.toFloat();
     }
 
     //อ่านอุณหภูมิ
@@ -552,16 +595,23 @@ void Run() {
     // Set the position to display "Project NANO" on the screen
     int n1 = 1;  // X coordinate
     int b1 = 53;  // Y coordinate
-    u8g2.drawStr(n1, b1, "50");
+    u8g2.setCursor(n1, b1);
+    u8g2.print(percent20);
+  
     int n2 = 1;  // X coordinate
     int b2 = 43;  // Y coordinate
-    u8g2.drawStr(n2, b2, "100");
+    u8g2.setCursor(n2, b2);
+    u8g2.print(percent40);
+
     int n3 = 1;  // X coordinate
     int b3 = 33;  // Y coordinate
-    u8g2.drawStr(n3, b3, "150");
+    u8g2.setCursor(n3, b3);
+    u8g2.print(percent60);
+
     int n4 = 1;  // X coordinate
     int b4 = 23;  // Y coordinate
-    u8g2.drawStr(n4, b4, "200");
+    u8g2.setCursor(n4, b4);
+    u8g2.print(percent80);
 
     //วาดแกน
     // วาดเส้นแนวตั้งที่ตำแหน่ง x=5, y=10, ความยาว 50 pixel
@@ -691,10 +741,16 @@ void timer_RUN() {
     
     //AS7341 spectrum sensor
     // Read all channels at the same time and store in as7341 object
+    NM415 = as7341.getChannel(AS7341_CHANNEL_415nm_F1);
+    NM445 = as7341.getChannel(AS7341_CHANNEL_445nm_F2);
     NM480 = as7341.getChannel(AS7341_CHANNEL_480nm_F3);
     NM515 = as7341.getChannel(AS7341_CHANNEL_515nm_F4);
+    NM555 = as7341.getChannel(AS7341_CHANNEL_555nm_F5);
+    NM590 = as7341.getChannel(AS7341_CHANNEL_590nm_F6);
+    NM630 = as7341.getChannel(AS7341_CHANNEL_630nm_F7);
+    NM680 = as7341.getChannel(AS7341_CHANNEL_680nm_F8);
 
-    temperature[currentIndex] = NM515;
+    temperature[currentIndex] = NM515;  //อ่าน Sensor ที่ 515nm
 
     if (!as7341.readAllChannels()){
       Serial.println("Error reading all channels!");
@@ -724,40 +780,40 @@ void timer_RUN() {
     // Serial.println(as7341.getChannel(AS7341_CHANNEL_NIR));
     }
 
-    //คำนวนค่า Standard deviation และค่า Mean จำนวน 10 ครั้งแรกที่อ่านผล คำนวนจากครั้งที่ 2 ถึง 11
-        if (currentIndex >= 11) {
+    //คำนวนค่า Standard deviation และค่า Mean จำนวน 15 ครั้งแรกที่อ่านผล คำนวนจากครั้งที่ 2 ถึง 16 ไม่ใช้ครั้งที่ 1 เพราะค่าอาจเป็น 0 หรือไม่แน่นอน
+        if (currentIndex >= 16) {
           // Calculate mean
           float mean = 0.0;
-          for (int i = 2; i <= 11; i++) {
+          for (int i = 2; i <= 16; i++) {
             mean += temperature[i];
           }
-          mean /= 10;
+          mean /= 15;
 
           // Calculate standard deviation
           float sumSquaredDiff = 0.0;
-          for (int j = 2; j <= 11; j++) {
+          for (int j = 2; j <= 16; j++) {
             sumSquaredDiff += pow(temperature[j] - mean, 2);
           }
-          float standardDeviation = sqrt(sumSquaredDiff / 9); // N-1
+          float standardDeviation = sqrt(sumSquaredDiff / 14); // N-1
 
           // Find maximum temperature
-          float maxTemperature = temperature[2];
-          for (int k = 3; k <= 11; k++) {
-            if (temperature[k] > maxTemperature) {
-              maxTemperature = temperature[k];
-            }
-          }
+          // float maxTemperature = temperature[2];
+          // for (int k = 3; k <= 11; k++) {
+          //   if (temperature[k] > maxTemperature) {
+          //     maxTemperature = temperature[k];
+          //   }
+          // }
 
-          //คำนวน CT จาก 3SD + ค่า MAX จากเวลนาทีที่ 2 ถึง 11
-          CT_value = maxTemperature + (standardDeviation * 3);
+          //คำนวน CT จาก 3SD (99.73%) + ค่า MAX จากเวลนาทีที่ 2 ถึง 11 ==>ถ้ามากกว่า 4SD มีค่า >100%
+          CT_value = mean + (standardDeviation * 3);
 
           // Print mean, standard deviation, and maximum temperature
           Serial.print("Mean: ");
           Serial.println(mean);
           Serial.print("Standard Deviation: ");
           Serial.println(standardDeviation);
-          Serial.print("Maximum Temperature: ");
-          Serial.println(maxTemperature);
+          // Serial.print("Maximum Temperature: ");
+          // Serial.println(maxTemperature);
           Serial.print("CT: ");
           Serial.println(CT_value);
       }    
@@ -766,37 +822,49 @@ void timer_RUN() {
   }
 }
 
-// void Graph() { //กราฟ scatter plot
-//   for (int igraph = 0; igraph < timeRUN; igraph++) {
-//     int yPos1 = map(temperature[igraph], 25, 160, 55, 10);  
-//     int yPos2 = map(temperature[igraph + 1], 25, 160, 55, 10);
-
-//     // ใช้ u8g2.drawHLine() แทน u8g2.drawLine() หรือลองใช้คำสั่งวาดเส้น曲จากศูนย์กลาง
-//     u8g2.drawHLine(12 + igraph, yPos1, 1); 
-//   }
-// }
-
 // กราฟเส้นแนวตั้ง
 void Graph() {
+  // คำนวณค่า max และ min ของข้อมูล
+  maxTemp = temperature[0];
+  minTemp = temperature[0];
+
+  for (int i = 1; i < timeRUN; i++) {
+    if (temperature[i] > maxTemp) {
+      maxTemp = temperature[i];
+    } else if (temperature[i] < minTemp) {
+      minTemp = temperature[i];
+    }
+  }
 
   // วนลูปเพื่อวาดกราฟเส้น
-  for (int igraph = 0; igraph < timeRUN; igraph++) {
+  for (int igraph = 0; igraph < timeRUN - 1; igraph++) {
     // คำนวณตำแหน่ง y สำหรับกราฟเส้นทั้งสอง
-    int yPos1 = map(temperature[igraph], 25, 250, 55, 10);
-    int yPos2 = map(temperature[igraph + 1], 25, 250, 55, 10);
+    int yPos1 = map(temperature[igraph], minTemp, maxTemp + 50, 60, 10);
+    // int yPos2 = map(temperature[igraph + 1], minTemp, maxTemp, 55, 10);
 
     // วาดเส้นระหว่างจุด (12 + igraph, yPos1) ถึง (13 + igraph, yPos2)
-    u8g2.drawLine(12 + igraph, yPos1, 13 + igraph, yPos2);
+    // u8g2.drawLine(13 + igraph, yPos1, 14 + igraph, yPos2);
+
+    // วาด Scatter plot
+    u8g2.drawHLine(12 + igraph, yPos1, 1);
   }
-  //สร้างเส้น CT
-  if (currentIndex >= 11) {
+
+  // สร้างเส้น CT
+  if (currentIndex >= 16) {
     // ตำแหน่งเริ่มต้นของเส้นตรง
     int startX = 13;
     int endX = 104;
-    int targetY = map(CT_value, 25, 250, 55, 10); // แปลงค่า CT_value เป็นระหว่าง 10 ถึง 55
+    int targetY = map(CT_value, minTemp, maxTemp + 50, 60, 10); // แปลงค่า CT_value เป็นระหว่าง 10 ถึง 60
     // วาดเส้นตรง
     u8g2.drawLine(startX, targetY, endX, targetY);
   }
+
+  //คำนวนค่าใส่ในสเกลแกน Y จากค่า max
+  int yvalue = maxTemp + 50;
+  percent20 = (yvalue/5) * 1;
+  percent40 = (yvalue/5) * 2;
+  percent60 = (yvalue/5) * 3;
+  percent80 = (yvalue/5) * 4;
 
 }
 
@@ -816,69 +884,27 @@ void runInstrument(){
     }
 }
 
-////////////////////////////////////กราฟโค้ด///////////////////////////////////////////////////////////////
-// void Graph(){ //กราฟเส้น
-//   //ส่วนสร้างกราฟ
-//     for (igraph = 0; igraph< 89; igraph++) {
-//       int yPos1 = map(temperature[igraph], 25, 70, 55, 10);  // Map temperature to fit Y-axis range
-//       int yPos2 = map(temperature[igraph + 1], 25, 70, 55, 10);
-//       u8g2.drawLine(5 + igraph, yPos1, 5 + igraph, yPos2);   
-//     }
+///////////////////////////////////////โค้ดสร้างกราฟ///////////////////////////////////////////////////////////
+// void Graph() {
+//   // วนลูปเพื่อวาดกราฟเส้น
+//   for (int igraph = 0; igraph < timeRUN; igraph++) {
+//     // คำนวณตำแหน่ง y สำหรับกราฟเส้นทั้งสอง
+//     int yPos1 = map(temperature[igraph], 25, 250, 55, 10);
+//     // int yPos2 = map(temperature[igraph + 1], 25, 250, 55, 10);
 
-// }
+//     // วาดเส้นระหว่างจุด (12 + igraph, yPos1) ถึง (13 + igraph, yPos2)
+//     // u8g2.drawLine(13 + igraph, yPos1, 14 + igraph, yPos2);
 
-// void Graph() { //กราฟ scatter plot
-//   for (int igraph = 0; igraph < 89; igraph++) {
-//     int yPos1 = map(temperature[igraph], 25, 70, 55, 10);  
-//     int yPos2 = map(temperature[igraph + 1], 25, 70, 55, 10);
-
-//     // ใช้ u8g2.drawHLine() แทน u8g2.drawLine() หรือลองใช้คำสั่งวาดเส้น曲จากศูนย์กลาง
-//     u8g2.drawHLine(5 + igraph, yPos1, 1); 
+//     //วาด Scatter plot
+//     u8g2.drawHLine(12 + igraph, yPos1, 1);
 //   }
-// }
-
-// void Graph() { //กราฟเส้น
-//   for (int igraph = 0; igraph < 89; igraph++) {
-//     int x1 = 4 + igraph;
-//     int y1 = map(temperature[igraph], 25, 70, 55, 10);
-
-//     int x2 = 5 + igraph;
-//     int y2 = map(temperature[igraph + 1], 25, 70, 55, 10);
-
-//     u8g2.drawLine(x1, y1, x2, y1);  // วาดเส้นแนวนอนที่ y คงที่
-//     u8g2.drawLine(x2, y1, x2, y2);  // วาดเส้นแนวตั้งไปยัง y ถัดไป
-//   }
-// }
-
-// void Graph() { //กราฟแท่ง
-//   for (int igraph = 0; igraph < 89; igraph++) {
-//     int yPos = map(temperature[igraph], 25, 70, 55, 10); // ปรับค่าใน map()
-//     // ใช้ u8g2.drawVLine() เพื่อวาดแท่ง
-//     u8g2.drawVLine(5 + igraph, yPos, 30 + yPos);
-//   }
-// }
-////////////////////////////////////โค้ด Timer ต้นแบบ///////////////////////////////////////////////////////////////
-// void timer() {
-//   if (millis() - last_time > period) {
-
-//     TIME_COUNT++;
-
-//     //ส่วนสร้างกราฟ
-//     if (currentIndex <89){ //เก็บค่าแค่ 90 ค่าเท่านั้น
-//       currentIndex++;
-//       //Serial.println(currentIndex);
-      
-//     //ทดสอบ random ค่า
-//     temperature[currentIndex] = READTEMP;  // Replace with actual sensor reading
-
-//     } 
-//     else if (currentIndex >=89){ //รีเซ็ทค่า currentIndex
-//       currentIndex =0; //รีเซ็ทค่า currentIndex เริ่มต้นใหม่
-//       clearGraph();
-//     }
-//     last_time = millis();  //เซฟเวลาปัจจุบันไว้เพื่อรอจนกว่า millis() จะมากกว่าตัวมันเท่า period
-//     if (TIME_COUNT >= timeRUN) {
-//       TIME_COUNT = 0;
-//     }
+//   //สร้างเส้น CT
+//   if (currentIndex >= 11) {
+//     // ตำแหน่งเริ่มต้นของเส้นตรง
+//     int startX = 13;
+//     int endX = 104;
+//     int targetY = map(CT_value, 25, 250, 55, 10); // แปลงค่า CT_value เป็นระหว่าง 10 ถึง 55
+//     // วาดเส้นตรง
+//     u8g2.drawLine(startX, targetY, endX, targetY);
 //   }
 // }
