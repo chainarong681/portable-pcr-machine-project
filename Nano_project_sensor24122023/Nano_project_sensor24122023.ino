@@ -107,6 +107,10 @@ int NM680; //ค่าอ่านที่ 680 nm
 
 //คำนวนค่า CT
 float CT_value;
+//คำนวนค่า Mean
+float mean = 0.0;
+//สถานะผลทดสอบ
+String report_result;
 
 /////////////////////////////////WIFI//////////////////////////////////////
 // Function to write a string to EEPROM
@@ -186,7 +190,9 @@ void handleSecondPage() {
           "680 nm Signal: " + String(NM680) + "</p>";
   html += "</fieldset><br>";
 
-
+  //ส่งผลการทดสอบ
+  html += "<h1 style='font-size: 55px; color: blue;'>Result: " + report_result + "</h1>";
+  
   // เพิ่มปุ่ม Start Run และ Stop Run
   html += "<button style='font-size: 28px; background-color: lightblue;' onclick='startRun()'>Start Run</button> ";
   html += "<button style='font-size: 28px; background-color: lightyellow;' onclick='resetRun()'>Reset Run</button> ";
@@ -688,6 +694,9 @@ void Run() {
           //LED blue pin OFF
           digitalWrite(ledBluePin, LOW);
         }
+        //วิเคราะห์ผล
+        result_report();
+
       }
       else if(State_Run == 4) { //Reset
         currentIndex =0; //รีเซ็ทค่า currentIndex เริ่มต้นใหม่
@@ -783,7 +792,7 @@ void timer_RUN() {
     //คำนวนค่า Standard deviation และค่า Mean จำนวน 15 ครั้งแรกที่อ่านผล คำนวนจากครั้งที่ 2 ถึง 16 ไม่ใช้ครั้งที่ 1 เพราะค่าอาจเป็น 0 หรือไม่แน่นอน
         if (currentIndex >= 16) {
           // Calculate mean
-          float mean = 0.0;
+          
           for (int i = 2; i <= 16; i++) {
             mean += temperature[i];
           }
@@ -888,6 +897,16 @@ void runInstrument(){
     } else {
       analogWrite(peltierPin, Output);
     }
+}
+
+void result_report(){
+  if (currentIndex > 16 && currentIndex <= timeRUN) {
+    if (NM515 >= CT_value ){
+      report_result = "Positive";
+    } else{
+      report_result = "Negative";
+    }
+  }
 }
 
 ///////////////////////////////////////โค้ดสร้างกราฟ///////////////////////////////////////////////////////////
