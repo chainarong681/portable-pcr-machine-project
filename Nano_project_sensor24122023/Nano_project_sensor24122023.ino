@@ -855,8 +855,14 @@ void Graph() {
     int startX = 15;
     int endX = 105;
     int targetY = map(CT_value, minTemp, maxTemp + 50, 60, 10); // แปลงค่า CT_value เป็นระหว่าง 10 ถึง 60
+
     // วาดเส้นตรง
-    u8g2.drawLine(startX, targetY, endX, targetY);
+    // u8g2.drawLine(startX, targetY, endX, targetY);
+
+    // วาดจุดต่อจุดทีละ 5 จุด
+    for (int x = startX; x <= endX; x += 5) {
+      u8g2.drawPixel(x, targetY);
+    }
   }
 
   //คำนวนค่าใส่ในสเกลแกน Y จากค่า max
