@@ -836,7 +836,7 @@ void Graph() {
   // คำนวณค่า max และ min ของข้อมูล
   maxTemp = temperature[0];
   minTemp = temperature[0];
-  minAverage = mean - 25; //ใช้แทนค่า min เพราะค่ามักเริ่มค่าในช่วงต้นๆ ทำให้ได้สเกลห่างมาก
+  int minAverage = mean - 25; //ใช้แทนค่า min เพราะค่ามักเริ่มค่าในช่วงต้นๆ ทำให้ได้สเกลห่างมาก
 
   for (int i = 1; i < timeRUN; i++) {
     if (temperature[i] > maxTemp) {
