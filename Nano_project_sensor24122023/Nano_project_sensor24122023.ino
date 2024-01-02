@@ -668,6 +668,8 @@ void Run() {
         TIME_COUNT = 0;  
         //LED blue pin OFF
         digitalWrite(ledBluePin, LOW);
+        //ลบกราฟ
+        clearGraph();
       } else if(State_Run == 1) { //RUN
         //Buzzer
           Buzzer();
@@ -699,8 +701,8 @@ void Run() {
 
       }
       else if(State_Run == 4) { //Reset
-        currentIndex =0; //รีเซ็ทค่า currentIndex เริ่มต้นใหม่
         clearGraph();
+        currentIndex = 0; //รีเซ็ทค่า currentIndex เริ่มต้นใหม่
         State_Run = 0;
         Buzzer_count = 0;
 
@@ -708,13 +710,12 @@ void Run() {
         digitalWrite(ledBluePin, LOW);
 
         // Reset ESP32
-          //ESP.restart();
+          // ESP.restart();
 
         //RESET PID output
           myPID.SetMode(MANUAL);
           Output = 0;
           myPID.SetMode(AUTOMATIC);
-
       }
 
 } while (u8g2.nextPage());
@@ -790,7 +791,7 @@ void timer_RUN() {
     }
 
     //คำนวนค่า Standard deviation และค่า Mean จำนวน 15 ครั้งแรกที่อ่านผล คำนวนจากครั้งที่ 2 ถึง 16 ไม่ใช้ครั้งที่ 1 เพราะค่าอาจเป็น 0 หรือไม่แน่นอน
-        if (currentIndex >= 16) {
+        if (currentIndex <= 16) {
           // Calculate mean
           
           for (int i = 2; i <= 16; i++) {
@@ -833,14 +834,15 @@ void timer_RUN() {
 
 // กราฟเส้นแนวตั้ง
 void Graph() {
-  // คำนวณค่า max และ min ของข้อมูล
+  // คำนวณค่า max และ min ของข้อมูล ใช้ array ตำแหน่งที่ 0
   maxTemp = temperature[0];
   minTemp = temperature[0];
 
-  for (int i = 1; i < timeRUN; i++) {
+  for (int i = 0; i < timeRUN; i++) {
     if (temperature[i] > maxTemp) {
       maxTemp = temperature[i];
-    } else if (temperature[i] < minTemp) {
+    }
+    if (temperature[i] < minTemp) {
       minTemp = temperature[i];
     }
   }
@@ -848,11 +850,11 @@ void Graph() {
   // วนลูปเพื่อวาดกราฟเส้น
   for (int igraph = 1; igraph < timeRUN - 1; igraph++) {
     // คำนวณตำแหน่ง y สำหรับกราฟเส้นทั้งสอง
-    int yPos1 = map(temperature[igraph], minTemp, maxTemp + 50, 60, 10);
-    int yPos2 = map(temperature[igraph + 1], minTemp, maxTemp + 50, 60, 10);
+    int yPos1 = map(temperature[igraph], minTemp, maxTemp + 25, 60, 10);
+    int yPos2 = map(temperature[igraph + 1], minTemp, maxTemp + 25, 60, 10);
     
     // วาดเส้นระหว่างจุด
-    u8g2.drawLine(15 + igraph, yPos1, 15 + igraph, yPos2);
+    u8g2.drawLine(14 + igraph, yPos1, 14 + igraph, yPos2);
 
     // วาด Scatter plot
     // u8g2.drawHLine(15 + igraph, yPos1, 1);
@@ -863,7 +865,7 @@ void Graph() {
     // ตำแหน่งเริ่มต้นของเส้นตรง
     int startX = 15;
     int endX = 105;
-    int targetY = map(CT_value, minTemp, maxTemp + 50, 60, 10); // แปลงค่า CT_value เป็นระหว่าง 10 ถึง 60
+    int targetY = map(CT_value, minTemp, maxTemp + 25, 60, 10); // แปลงค่า CT_value เป็นระหว่าง 10 ถึง 60
 
     // วาดเส้นตรง
     // u8g2.drawLine(startX, targetY, endX, targetY);
@@ -875,7 +877,7 @@ void Graph() {
   }
 
   //คำนวนค่าใส่ในสเกลแกน Y จากค่า max
-  int yvalue = maxTemp + 50;
+  int yvalue = maxTemp + 25;
   percent20 = (yvalue/5) * 1;
   percent40 = (yvalue/5) * 2;
   percent60 = (yvalue/5) * 3;
@@ -885,14 +887,14 @@ void Graph() {
 
 void clearGraph() { //เคลียร์หน้าจอ
   for (int i = 0; i < timeRUN; i++) {
-    temperature[i] = 0.0;
+    temperature[i] = 0;
   }
 }
 
 //Run temp
 void runInstrument(){
-  //Protect >=70
-  if ((READTEMP >= methodRUN) || (READTEMP >= 70)) {
+  //Protect >=70 และป้องกัน PID จ่ายกระแสเกิน 100
+  if ((READTEMP >= methodRUN) || (READTEMP >= 70) || (Output > 100)) {
       analogWrite(peltierPin, 0); //ปรกติจะเท่ากับ 0
     } else {
       analogWrite(peltierPin, Output);
