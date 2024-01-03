@@ -232,6 +232,10 @@ void handleThirdPage() {
   html += "<option value='37'>Recombinase Polymerase Amplification(37 'C)</option>";
   html += "<option value='42'>Recombinase Polymerase Amplification(42 'C)</option>";
   html += "<option value='60'>Loop-mediated isothermal amplification(60 'C)</option>";
+  html += "<option value='61'>Loop-mediated isothermal amplification(61 'C)</option>";
+  html += "<option value='62'>Loop-mediated isothermal amplification(62 'C)</option>";
+  html += "<option value='63'>Loop-mediated isothermal amplification(63 'C)</option>";
+  html += "<option value='64'>Loop-mediated isothermal amplification(64 'C)</option>";
   html += "<option value='65'>Loop-mediated isothermal amplification(65 'C)</option>";
   html += "</select><br><br>";
   html += "<label for='time' style='font-size: 24px;'>Choose a time: </label>";
@@ -791,17 +795,17 @@ void timer_RUN() {
     }
 
     //คำนวนค่า Standard deviation และค่า Mean จำนวน 15 ครั้งแรกที่อ่านผล คำนวนจากครั้งที่ 2 ถึง 16 ไม่ใช้ครั้งที่ 1 เพราะค่าอาจเป็น 0 หรือไม่แน่นอน
-        if (currentIndex <= 16) {
+        if (currentIndex >= 6 && currentIndex <= 20) {
           // Calculate mean
           
-          for (int i = 2; i <= 16; i++) {
+          for (int i = 6; i <= 20; i++) {
             mean += temperature[i];
           }
           mean /= 15;
 
           // Calculate standard deviation
           float sumSquaredDiff = 0.0;
-          for (int j = 2; j <= 16; j++) {
+          for (int j = 6; j <= 20; j++) {
             sumSquaredDiff += pow(temperature[j] - mean, 2);
           }
           float standardDeviation = sqrt(sumSquaredDiff / 14); // N-1
@@ -814,7 +818,7 @@ void timer_RUN() {
           //   }
           // }
 
-          //คำนวน CT จาก 3SD (99.73%) + ค่า MAX จากเวลนาทีที่ 2 ถึง 11 ==>ถ้ามากกว่า 4SD มีค่า >100%
+          //คำนวน CT จาก 3SD (99.73%) + ค่า MAX จากเวลนาทีที่ 6 ถึง 20 ==>ถ้ามากกว่า 4SD มีค่า >100%
           CT_value = mean + (standardDeviation * 3);
 
           // Print mean, standard deviation, and maximum temperature
@@ -834,51 +838,54 @@ void timer_RUN() {
 
 // กราฟเส้นแนวตั้ง
 void Graph() {
-  // คำนวณค่า max และ min ของข้อมูล ใช้ array ตำแหน่งที่ 0
-  maxTemp = temperature[0];
-  minTemp = temperature[0];
+  //3 รอบแรกไม่สร้างกราฟ
+  if (currentIndex > 3 && currentIndex <= timeRUN) {
+      // คำนวณค่า max และ min ของข้อมูล ใช้ array ตำแหน่งที่ 0
+      maxTemp = temperature[4];
+      minTemp = temperature[4];
 
-  for (int i = 0; i < timeRUN; i++) {
-    if (temperature[i] > maxTemp) {
-      maxTemp = temperature[i];
-    }
-    if (temperature[i] < minTemp) {
-      minTemp = temperature[i];
-    }
-  }
+      for (int 4 = 0; i < timeRUN; i++) {
+        if (temperature[i] > maxTemp) {
+          maxTemp = temperature[i];
+        }
+        if (temperature[i] < minTemp) {
+          minTemp = temperature[i];
+        }
+      }
 
-  // วนลูปเพื่อวาดกราฟเส้น
-  for (int igraph = 1; igraph < timeRUN - 1; igraph++) {
-    // คำนวณตำแหน่ง y สำหรับกราฟเส้นทั้งสอง
-    int yPos1 = map(temperature[igraph], minTemp, maxTemp + CT_value, 60, 10);
-    int yPos2 = map(temperature[igraph + 1], minTemp, maxTemp + CT_value, 60, 10);
-    
-    // วาดเส้นระหว่างจุด
-    u8g2.drawLine(14 + igraph, yPos1, 14 + igraph, yPos2);
+      // วนลูปเพื่อวาดกราฟเส้น
+      for (int igraph = 4; igraph < timeRUN - 1; igraph++) {
+        // คำนวณตำแหน่ง y สำหรับกราฟเส้นทั้งสอง
+        int yPos1 = map(temperature[igraph], minTemp, maxTemp + 300, 60, 10);
+        int yPos2 = map(temperature[igraph + 1], minTemp, maxTemp + 300, 60, 10);
+        
+        // วาดเส้นระหว่างจุด
+        u8g2.drawLine(14 + igraph, yPos1, 14 + igraph, yPos2);
 
-    // วาด Scatter plot
-    // u8g2.drawHLine(15 + igraph, yPos1, 1);
+        // วาด Scatter plot
+        // u8g2.drawHLine(15 + igraph, yPos1, 1);
 
-    // สร้างเส้น CT
-    // ตำแหน่งเริ่มต้นของเส้นตรง
-    int startX = 15;
-    int endX = 105;
-    int targetY = map(CT_value, minTemp, maxTemp + CT_value, 60, 10); // แปลงค่า CT_value เป็นระหว่าง 10 ถึง 60
+        // สร้างเส้น CT
+        // ตำแหน่งเริ่มต้นของเส้นตรง
+        int startX = 15;
+        int endX = 105;
+        int targetY = map(CT_value, minTemp, maxTemp + 300, 60, 10); // แปลงค่า CT_value เป็นระหว่าง 10 ถึง 60
 
-    // วาดเส้นตรง
-    u8g2.drawLine(startX, targetY, endX, targetY);
+        // วาดเส้นตรง
+        u8g2.drawLine(startX, targetY, endX, targetY);
 
-    // วาดจุดต่อจุดทีละ 5 จุด
-    // for (int x = startX; x <= endX; x += 5) {
-    //   u8g2.drawPixel(x, targetY);
-    // }
+        // วาดจุดต่อจุดทีละ 5 จุด
+        // for (int x = startX; x <= endX; x += 5) {
+        //   u8g2.drawPixel(x, targetY);
+        // }
 
-    //คำนวนค่าใส่ในสเกลแกน Y จากค่า max
-    int yvalue = maxTemp + CT_value;
-    percent20 = (yvalue/5) * 1;
-    percent40 = (yvalue/5) * 2;
-    percent60 = (yvalue/5) * 3;
-    percent80 = (yvalue/5) * 4;
+        //คำนวนค่าใส่ในสเกลแกน Y จากค่า max
+        int yvalue = maxTemp + 300;
+        percent20 = (yvalue/5) * 1;
+        percent40 = (yvalue/5) * 2;
+        percent60 = (yvalue/5) * 3;
+        percent80 = (yvalue/5) * 4;
+      }
   }
 }
 
@@ -899,7 +906,7 @@ void runInstrument(){
 }
 
 void result_report(){
-  if (currentIndex > 16 && currentIndex <= timeRUN) {
+  if (currentIndex > 20 && currentIndex <= timeRUN) {
     if (NM515 >= CT_value ){
       report_result = "Positive";
     } else{
