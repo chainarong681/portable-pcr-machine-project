@@ -850,8 +850,8 @@ void Graph() {
   // วนลูปเพื่อวาดกราฟเส้น
   for (int igraph = 1; igraph < timeRUN - 1; igraph++) {
     // คำนวณตำแหน่ง y สำหรับกราฟเส้นทั้งสอง
-    int yPos1 = map(temperature[igraph], minTemp, maxTemp + 25, 60, 10);
-    int yPos2 = map(temperature[igraph + 1], minTemp, maxTemp + 25, 60, 10);
+    int yPos1 = map(temperature[igraph], minTemp, maxTemp + 50, 60, 10);
+    int yPos2 = map(temperature[igraph + 1], minTemp, maxTemp + 50, 60, 10);
     
     // วาดเส้นระหว่างจุด
     u8g2.drawLine(14 + igraph, yPos1, 14 + igraph, yPos2);
@@ -865,7 +865,7 @@ void Graph() {
     // ตำแหน่งเริ่มต้นของเส้นตรง
     int startX = 15;
     int endX = 105;
-    int targetY = map(CT_value, minTemp, maxTemp + 25, 60, 10); // แปลงค่า CT_value เป็นระหว่าง 10 ถึง 60
+    int targetY = map(CT_value, minTemp, maxTemp + 50, 60, 10); // แปลงค่า CT_value เป็นระหว่าง 10 ถึง 60
 
     // วาดเส้นตรง
     // u8g2.drawLine(startX, targetY, endX, targetY);
@@ -877,7 +877,7 @@ void Graph() {
   }
 
   //คำนวนค่าใส่ในสเกลแกน Y จากค่า max
-  int yvalue = maxTemp + 25;
+  int yvalue = maxTemp + 50;
   percent20 = (yvalue/5) * 1;
   percent40 = (yvalue/5) * 2;
   percent60 = (yvalue/5) * 3;
@@ -893,8 +893,8 @@ void clearGraph() { //เคลียร์หน้าจอ
 
 //Run temp
 void runInstrument(){
-  //Protect >=70 และป้องกัน PID จ่ายกระแสเกิน 100
-  if ((READTEMP >= methodRUN) || (READTEMP >= 70) || (Output > 100)) {
+  //Protect >=70 และป้องกัน PID จ่ายกระแสเกิน 150
+  if ((READTEMP >= methodRUN) || (READTEMP >= 70) || (Output > 150)) {
       analogWrite(peltierPin, 0); //ปรกติจะเท่ากับ 0
     } else {
       analogWrite(peltierPin, Output);
