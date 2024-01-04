@@ -109,6 +109,8 @@ int NM680; //ค่าอ่านที่ 680 nm
 float CT_value;
 //คำนวนค่า Mean
 float mean = 0.0;
+const int dataSize = 20;
+int data[dataSize];
 //สถานะผลทดสอบ
 String report_result;
 
@@ -690,6 +692,9 @@ void Run() {
         //อ่านกราฟ
           Graph();
         
+        //คำนวน SD และ CT เมื่ออ่านค่าเกินรอบที่ 21
+        standardValue();
+        
         //ตรวจสอบ Run complete
         if (TIME_COUNT >= timeRUN) {
           TIME_COUNT = timeRUN;
@@ -794,12 +799,16 @@ void timer_RUN() {
     // Serial.println(as7341.getChannel(AS7341_CHANNEL_NIR));
     }
 
-    //คำนวนค่า Standard deviation และค่า Mean เริ่มที่ค่า 1
-        if (currentIndex >= 1 && currentIndex <= 21) {
-          // Calculate mean
-          const int dataSize = 20;
-          int data[dataSize];
+    //คำนวนค่า mean
+    meanValue();
 
+    last_time = millis();  //เซฟเวลาปัจจุบันไว้เพื่อรอจนกว่า millis() จะมากกว่าตัวมันเท่า period
+  }
+}
+
+void meanValue(){
+  //คำนวนค่า Mean เริ่มที่ค่า 1
+        if (currentIndex >= 1 && currentIndex <= 21) {
           // อ่านข้อมูล 20
           for (int i = 0; i < dataSize; ++i) {
             data[i] = NM515;
@@ -809,7 +818,15 @@ void timer_RUN() {
             mean += data[i];
           }
           mean /= dataSize;
+          // Print mean, standard deviation, and maximum temperature
+          Serial.print("Mean: ");
+          Serial.println(mean);
+      }    
+}
 
+void standardValue(){
+  //คำนวนค่า standard deviation
+        if (currentIndex >21) {
           // Calculate standard deviation
           float variance = 0;
           for (int i = 0; i < dataSize; ++i) {
@@ -821,19 +838,9 @@ void timer_RUN() {
           //คำนวน CT จาก 3SD (99.73%) + ค่า MAX จากเวลนาทีที่ 6 ถึง 20 ==>ถ้ามากกว่า 4SD มีค่า >100%
           CT_value = mean + (standardDeviation * 3);
 
-          // Print mean, standard deviation, and maximum temperature
-          Serial.print("Mean: ");
-          Serial.println(mean);
           Serial.print("Standard Deviation: ");
           Serial.println(standardDeviation);
-          // Serial.print("Maximum Temperature: ");
-          // Serial.println(maxTemperature);
-          Serial.print("CT: ");
-          Serial.println(CT_value);
       }    
-
-    last_time = millis();  //เซฟเวลาปัจจุบันไว้เพื่อรอจนกว่า millis() จะมากกว่าตัวมันเท่า period
-  }
 }
 
 // กราฟเส้นแนวตั้ง
@@ -854,11 +861,11 @@ void Graph() {
       }
   }
       // วนลูปเพื่อวาดกราฟเส้น
-      //200 คือสเกลเริ่มที่ 200
+      //250 คือสเกลเริ่มที่ 250
       for (int igraph = 1; igraph < timeRUN - 1; igraph++) {
         // คำนวณตำแหน่ง y สำหรับกราฟเส้นทั้งสอง
-        int yPos1 = map(temperature[igraph], 200, maxTemp + 50, 60, 10);
-        int yPos2 = map(temperature[igraph + 1], 200, maxTemp + 50, 60, 10);
+        int yPos1 = map(temperature[igraph], 250, maxTemp + 50, 60, 10);
+        int yPos2 = map(temperature[igraph + 1], 250, maxTemp + 50, 60, 10);
         
         // วาดเส้นระหว่างจุด
         u8g2.drawLine(14 + igraph, yPos1, 14 + igraph, yPos2);
@@ -868,10 +875,10 @@ void Graph() {
 
         // สร้างเส้น CT
         // ตำแหน่งเริ่มต้นของเส้นตรง
-        if (currentIndex > 20) {
+        if (currentIndex > 21) {
           int startX = 15;
           int endX = 105;
-          int targetY = map(CT_value, 200, maxTemp + 50, 60, 10); // แปลงค่า CT_value เป็นระหว่าง 10 ถึง 60
+          int targetY = map(CT_value, 250, maxTemp + 50, 60, 10); // แปลงค่า CT_value เป็นระหว่าง 10 ถึง 60
 
           // วาดเส้นตรง
           u8g2.drawLine(startX, targetY, endX, targetY);
@@ -882,11 +889,11 @@ void Graph() {
           // }
         }
         //คำนวนค่าใส่ในสเกลแกน Y จากค่า max
-        int yvalue = ((maxTemp + 50) - 200) / 5;
-        percent20 = 200 + yvalue;
-        percent40 = 200 + (yvalue * 2);
-        percent60 = 200 + (yvalue * 3);
-        percent80 = 200 + (yvalue * 4);
+        int yvalue = ((maxTemp + 50) - 250) / 5;
+        percent20 = 250 + yvalue;
+        percent40 = 250 + (yvalue * 2);
+        percent60 = 250 + (yvalue * 3);
+        percent80 = 250 + (yvalue * 4);
       }
 }
 
