@@ -61,7 +61,7 @@ int currentIndex;   // Index to keep track of the current position in the array
 
 //คำนวนค่า max และ min กำหนดสเกลของกราฟเพื่อปรับความละเอียดตามค่า
 int maxTemp;
-int minTemp;
+int minTemp = 0;
 //คำนวนค่าใส่เลเบลแกน Y
 int percent20;
 int percent40;
@@ -109,6 +109,12 @@ int NM680; //ค่าอ่านที่ 680 nm
 float CT_value;
 //คำนวนค่า Mean
 float mean = 0.0;
+float mean_val[20]; //เก็บค่า 20 ค่า
+float sampleSumTotal = 0;
+int mean_i; //ค่าที่จะให้รันซ้ำ
+float SD_SumV = 0;
+float Stdv_value = 0;
+int SD_i;
 //สถานะผลทดสอบ
 String report_result;
 
@@ -232,6 +238,10 @@ void handleThirdPage() {
   html += "<option value='37'>Recombinase Polymerase Amplification(37 'C)</option>";
   html += "<option value='42'>Recombinase Polymerase Amplification(42 'C)</option>";
   html += "<option value='60'>Loop-mediated isothermal amplification(60 'C)</option>";
+  html += "<option value='61'>Loop-mediated isothermal amplification(61 'C)</option>";
+  html += "<option value='62'>Loop-mediated isothermal amplification(62 'C)</option>";
+  html += "<option value='63'>Loop-mediated isothermal amplification(63 'C)</option>";
+  html += "<option value='64'>Loop-mediated isothermal amplification(64 'C)</option>";
   html += "<option value='65'>Loop-mediated isothermal amplification(65 'C)</option>";
   html += "</select><br><br>";
   html += "<label for='time' style='font-size: 24px;'>Choose a time: </label>";
@@ -484,7 +494,6 @@ void draw_box(u8g2_uint_t x, u8g2_uint_t y, u8g2_uint_t width, u8g2_uint_t heigh
 void draw_loading_bar(u8g2_uint_t boxlong) {
   u8g2.firstPage();
   do {
-
     u8g2.setFont(u8g2_font_luBS08_te);  // Use a bold font, you can choose a different one if needed
     // Set the position to display "Project NANO" on the screen
     int x = 28;  // X coordinate
@@ -541,8 +550,8 @@ void loop(void) {
     //อ่านอุณหภูมิทุก X นาที แสดงที่จอ
      if (millis() - last_timeTempREAD > periodTemp) {
         last_timeTemp = READTEMP;
-        last_timeTempREAD = millis(); // แก้ตรงนี้
-        Serial.println(last_timeTemp);
+        last_timeTempREAD = millis();
+        // Serial.println(last_timeTemp);
     }
 
     //Run program
@@ -686,6 +695,9 @@ void Run() {
         //อ่านกราฟ
           Graph();
         
+        //คำนวนค่า SD
+        standardValue();
+        
         //ตรวจสอบ Run complete
         if (TIME_COUNT >= timeRUN) {
           TIME_COUNT = timeRUN;
@@ -705,6 +717,17 @@ void Run() {
         currentIndex = 0; //รีเซ็ทค่า currentIndex เริ่มต้นใหม่
         State_Run = 0;
         Buzzer_count = 0;
+
+        //reset การคำนวนในฟังก์ชัน mean ให้เริ่มต้นใหม่
+        for (int j = 0; j <= 20; j++) {
+          mean_val[j] = 0;
+        }
+        mean_i = 0;
+        sampleSumTotal = 0;
+        mean = 0;
+        SD_SumV = 0;
+        Stdv_value = 0;
+        SD_i = 0;
 
         //LED blue pin OFF
         digitalWrite(ledBluePin, LOW);
@@ -747,8 +770,6 @@ void timer_RUN() {
       //Serial.println(currentIndex);
 
     //อ่าน Sensors
-    // temperature[currentIndex] = READTEMP;  // ใช้แสดงอุณหภูมิ
-    
     //AS7341 spectrum sensor
     // Read all channels at the same time and store in as7341 object
     NM415 = as7341.getChannel(AS7341_CHANNEL_415nm_F1);
@@ -772,10 +793,10 @@ void timer_RUN() {
     // Serial.println(as7341.getChannel(AS7341_CHANNEL_415nm_F1));
     // Serial.print("F2 445nm : ");
     // Serial.println(as7341.getChannel(AS7341_CHANNEL_445nm_F2));
-    Serial.print("F3 480nm : ");
-    Serial.println(as7341.getChannel(AS7341_CHANNEL_480nm_F3));
-    Serial.print("F4 515nm : ");
-    Serial.println(as7341.getChannel(AS7341_CHANNEL_515nm_F4));
+    // Serial.print("F3 480nm : ");
+    // Serial.println(as7341.getChannel(AS7341_CHANNEL_480nm_F3));
+    // Serial.print("F4 515nm : ");
+    // Serial.println(as7341.getChannel(AS7341_CHANNEL_515nm_F4));
     // Serial.print("F5 555nm : ");
     // Serial.println(as7341.getChannel(AS7341_CHANNEL_555nm_F5));
     // Serial.print("F6 590nm : ");
@@ -790,99 +811,114 @@ void timer_RUN() {
     // Serial.println(as7341.getChannel(AS7341_CHANNEL_NIR));
     }
 
-    //คำนวนค่า Standard deviation และค่า Mean จำนวน 15 ครั้งแรกที่อ่านผล คำนวนจากครั้งที่ 2 ถึง 16 ไม่ใช้ครั้งที่ 1 เพราะค่าอาจเป็น 0 หรือไม่แน่นอน
-        if (currentIndex <= 16) {
-          // Calculate mean
-          
-          for (int i = 2; i <= 16; i++) {
-            mean += temperature[i];
-          }
-          mean /= 15;
-
-          // Calculate standard deviation
-          float sumSquaredDiff = 0.0;
-          for (int j = 2; j <= 16; j++) {
-            sumSquaredDiff += pow(temperature[j] - mean, 2);
-          }
-          float standardDeviation = sqrt(sumSquaredDiff / 14); // N-1
-
-          // Find maximum temperature
-          // float maxTemperature = temperature[2];
-          // for (int k = 3; k <= 11; k++) {
-          //   if (temperature[k] > maxTemperature) {
-          //     maxTemperature = temperature[k];
-          //   }
-          // }
-
-          //คำนวน CT จาก 3SD (99.73%) + ค่า MAX จากเวลนาทีที่ 2 ถึง 11 ==>ถ้ามากกว่า 4SD มีค่า >100%
-          CT_value = mean + (standardDeviation * 3);
-
-          // Print mean, standard deviation, and maximum temperature
-          Serial.print("Mean: ");
-          Serial.println(mean);
-          Serial.print("Standard Deviation: ");
-          Serial.println(standardDeviation);
-          // Serial.print("Maximum Temperature: ");
-          // Serial.println(maxTemperature);
-          Serial.print("CT: ");
-          Serial.println(CT_value);
-      }    
+    //คำนวนค่า mean
+    meanValue();
 
     last_time = millis();  //เซฟเวลาปัจจุบันไว้เพื่อรอจนกว่า millis() จะมากกว่าตัวมันเท่า period
   }
 }
 
+void meanValue(){
+  //คำนวนค่า Mean
+  if (NM515 != 0){
+    mean_i++;
+        if (mean_i <= 20) {
+          // อ่านข้อมูล 20 คำนวนค่า mean
+          mean_val[mean_i] = NM515;
+          sampleSumTotal += mean_val[mean_i];
+          mean = sampleSumTotal/20;
+
+          // Print mean, standard deviation, and maximum temperature
+          Serial.print("mean_i: ");
+          Serial.println(mean_i);
+          Serial.print("sampleSumTotal: ");
+          Serial.println(sampleSumTotal);
+          Serial.print("Mean: ");
+          Serial.println(mean);
+      }
+  }
+
+}
+
+void standardValue(){
+   //คำนวนค่า Standard deviation
+   if (currentIndex >21) {
+      SD_i++;
+      if (SD_i <= 20) {
+          SD_SumV += pow((mean - mean_val[SD_i]),2);
+          Stdv_value = sqrt(SD_SumV/19); //N-1
+
+          //คำนวน CT จาก 3SD (99.73%) , 4SD มีค่า >100%
+          CT_value = mean + (Stdv_value * 4);
+
+          // Print mean, standard deviation, and maximum temperature
+          Serial.print("number i: ");
+          Serial.println(SD_i);
+          Serial.print("Stdv_value: ");
+          Serial.println(Stdv_value);
+      }
+   } 
+}
+
 // กราฟเส้นแนวตั้ง
 void Graph() {
-  // คำนวณค่า max และ min ของข้อมูล ใช้ array ตำแหน่งที่ 0
-  maxTemp = temperature[0];
-  minTemp = temperature[0];
+  if (currentIndex > 0 && currentIndex <= timeRUN) {
+      // คำนวณค่า max อ่านค่าทุกช่วงการวัด
+      maxTemp = temperature[0];    
+      for (int i = 0; i < timeRUN; i++) {
+        if (temperature[i] > maxTemp) {
+          maxTemp = temperature[i];
+        }
+      }
 
-  for (int i = 0; i < timeRUN; i++) {
-    if (temperature[i] > maxTemp) {
-      maxTemp = temperature[i];
-    }
-    if (temperature[i] < minTemp) {
-      minTemp = temperature[i];
-    }
+      // คำนวณค่า min อ่านค่า 20 นาทีแรก
+      const int arraySize = 20;  // กำหนดขนาดของอาเรย์
+      minTemp = temperature[arraySize];
+      for (int i = 0; i < arraySize; i++) {
+        if (temperature[i] != 0 && (minTemp == 0 || temperature[i] < minTemp)) {
+          minTemp = temperature[i];
+        }
+      }
+      // Serial.print("maxTemp: ");
+      // Serial.println(maxTemp);
+      // Serial.print("minTemp: ");
+      // Serial.println(minTemp);
   }
+      // วนลูปเพื่อวาดกราฟเส้น
+      //10 คือสเกลที่บวกเพิ่มให้บวกจากค่า max สุดท้ายที่ทำการวัดได้
+      for (int igraph = 1; igraph < timeRUN - 1; igraph++) {
+        // คำนวณตำแหน่ง y สำหรับกราฟเส้นทั้งสอง
+        int yPos1 = map(temperature[igraph], minTemp, maxTemp + 10, 60, 10);
+        int yPos2 = map(temperature[igraph + 1], minTemp, maxTemp + 10, 60, 10);
+        
+        // วาดเส้นระหว่างจุด
+        u8g2.drawLine(14 + igraph, yPos1, 14 + igraph, yPos2);
 
-  // วนลูปเพื่อวาดกราฟเส้น
-  for (int igraph = 1; igraph < timeRUN - 1; igraph++) {
-    // คำนวณตำแหน่ง y สำหรับกราฟเส้นทั้งสอง
-    int yPos1 = map(temperature[igraph], minTemp, maxTemp + 50, 60, 10);
-    int yPos2 = map(temperature[igraph + 1], minTemp, maxTemp + 50, 60, 10);
-    
-    // วาดเส้นระหว่างจุด
-    u8g2.drawLine(14 + igraph, yPos1, 14 + igraph, yPos2);
+        // วาด Scatter plot
+        // u8g2.drawHLine(15 + igraph, yPos1, 1);
 
-    // วาด Scatter plot
-    // u8g2.drawHLine(15 + igraph, yPos1, 1);
-  }
+        // สร้างเส้น CT
+        // ตำแหน่งเริ่มต้นของเส้นตรง
+        if (currentIndex > 25) {
+          int startX = 15;
+          int endX = 105;
+          int targetY = map(CT_value, minTemp, maxTemp + 10, 60, 10); // แปลงค่า CT_value เป็นระหว่าง 10 ถึง 60
 
-  // สร้างเส้น CT
-  if (currentIndex >= 16) {
-    // ตำแหน่งเริ่มต้นของเส้นตรง
-    int startX = 15;
-    int endX = 105;
-    int targetY = map(CT_value, minTemp, maxTemp + 50, 60, 10); // แปลงค่า CT_value เป็นระหว่าง 10 ถึง 60
+          // วาดเส้นตรง
+          u8g2.drawLine(startX, targetY, endX, targetY);
 
-    // วาดเส้นตรง
-    // u8g2.drawLine(startX, targetY, endX, targetY);
-
-    // วาดจุดต่อจุดทีละ 5 จุด
-    for (int x = startX; x <= endX; x += 5) {
-      u8g2.drawPixel(x, targetY);
-    }
-  }
-
-  //คำนวนค่าใส่ในสเกลแกน Y จากค่า max
-  int yvalue = maxTemp + 50;
-  percent20 = (yvalue/5) * 1;
-  percent40 = (yvalue/5) * 2;
-  percent60 = (yvalue/5) * 3;
-  percent80 = (yvalue/5) * 4;
-
+          // วาดจุดต่อจุดทีละ 5 จุด
+          // for (int x = startX; x <= endX; x += 5) {
+          //   u8g2.drawPixel(x, targetY);
+          // }
+        }
+        //คำนวนค่าใส่ในสเกลแกน Y จากค่า max
+        int yvalue = ((maxTemp + 10) - minTemp) / 5;
+        percent20 = minTemp + yvalue;
+        percent40 = minTemp + (yvalue * 2);
+        percent60 = minTemp + (yvalue * 3);
+        percent80 = minTemp + (yvalue * 4);
+      }
 }
 
 void clearGraph() { //เคลียร์หน้าจอ
@@ -902,7 +938,7 @@ void runInstrument(){
 }
 
 void result_report(){
-  if (currentIndex > 16 && currentIndex <= timeRUN) {
+  if (currentIndex > 20 && currentIndex <= timeRUN) {
     if (NM515 >= CT_value ){
       report_result = "Positive";
     } else{
@@ -910,49 +946,3 @@ void result_report(){
     }
   }
 }
-
-///////////////////////////////////////โค้ดสร้างกราฟ///////////////////////////////////////////////////////////
-// void Graph() {
-//   // คำนวณค่า max และ min ของข้อมูล
-//   maxTemp = temperature[0];
-//   minTemp = temperature[0];
-
-//   for (int i = 1; i < timeRUN; i++) {
-//     if (temperature[i] > maxTemp) {
-//       maxTemp = temperature[i];
-//     } else if (temperature[i] < minTemp) {
-//       minTemp = temperature[i];
-//     }
-//   }
-
-//   // วนลูปเพื่อวาดกราฟเส้น
-//   for (int igraph = 0; igraph < timeRUN - 1; igraph++) {
-//     // คำนวณตำแหน่ง y สำหรับกราฟเส้นทั้งสอง
-//     int yPos1 = map(temperature[igraph], minTemp, maxTemp + 50, 60, 10);
-//     int yPos2 = map(temperature[igraph + 1], minTemp, maxTemp + 50, 60, 10);
-
-//     // วาดเส้นระหว่างจุด (12 + igraph, yPos1) ถึง (13 + igraph, yPos2)
-//     u8g2.drawLine(13 + igraph, yPos1, 14 + igraph, yPos2);
-
-//     // วาด Scatter plot
-//     // u8g2.drawHLine(12 + igraph, yPos1, 1);
-//   }
-
-//   // สร้างเส้น CT
-//   if (currentIndex >= 16) {
-//     // ตำแหน่งเริ่มต้นของเส้นตรง
-//     int startX = 13;
-//     int endX = 104;
-//     int targetY = map(CT_value, minTemp, maxTemp + 50, 60, 10); // แปลงค่า CT_value เป็นระหว่าง 10 ถึง 60
-//     // วาดเส้นตรง
-//     u8g2.drawLine(startX, targetY, endX, targetY);
-//   }
-
-//   //คำนวนค่าใส่ในสเกลแกน Y จากค่า max
-//   int yvalue = maxTemp + 50;
-//   percent20 = (yvalue/5) * 1;
-//   percent40 = (yvalue/5) * 2;
-//   percent60 = (yvalue/5) * 3;
-//   percent80 = (yvalue/5) * 4;
-
-// }
