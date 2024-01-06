@@ -187,17 +187,27 @@ void handleSecondPage() {
   //แสดงสัญญาณ
   html += "<fieldset style='font-size: 28px;'>";
   html += "<legend>Fluorescence channel:</legend>"; // กำหนดชื่อ GroupBox ด้วย Legend
-  html += "<p>415 nm Signal: " + String(NM415) + " | " +
-          "445 nm Signal: " + String(NM445) + " | <span style='color: green;'>480 nm Signal: " + String(NM480) + "</span></p>";
-  html += "<p><span style='color: green;'>515 nm Signal: " + String(NM515) + "</span> | " +
-          "555 nm Signal: " + String(NM555) + " | " +
-          "590 nm Signal: " + String(NM590) + "</p>";
-  html += "<p>630 nm Signal: " + String(NM630) + " | " +
-          "680 nm Signal: " + String(NM680) + "</p>";
+  html += "<p style='font-size: 25px;'>415 nm Signal: " + String(NM415) + " | " +
+            "445 nm Signal: " + String(NM445) + " | <span style='color: green; font-size: 25px;'>480 nm Signal: " + String(NM480) + "</span></p>";
+  html += "<p><span style='color: green; font-size: 25px;'>515 nm Signal: " + String(NM515) + "</span> | " +
+            "555 nm Signal: " + String(NM555) + " | " +
+            "590 nm Signal: " + String(NM590) + "</p>";
+  html += "<p style='font-size: 25px;'>630 nm Signal: " + String(NM630) + " | " +
+            "680 nm Signal: " + String(NM680) + "</p>";
   html += "</fieldset><br>";
 
   //ส่งผลการทดสอบ
-  html += "<h1 style='font-size: 55px; color: blue;'>Result: " + report_result + "</h1>";
+  // html += "<h1 style='font-size: 55px; color: blue;'>Result: " + report_result + "</h1>";
+
+ // Display test result with dynamic color
+  html += "<h1 style='font-size: 55px; ";
+  if (report_result == "Positive") {
+    html += "color: red;'>Result: Positive</h1>";
+  } else if (report_result == "Negative") {
+    html += "color: green;'>Result: Negative</h1>";
+  } else {
+    html += "color: black;'>Please wait for test results after cycle 25</h1>";
+  }
   
   // เพิ่มปุ่ม Start Run และ Stop Run
   html += "<button style='font-size: 28px; background-color: lightblue;' onclick='startRun()'>Start Run</button> ";
@@ -708,8 +718,6 @@ void Run() {
           //LED blue pin OFF
           digitalWrite(ledBluePin, LOW);
         }
-        //วิเคราะห์ผล
-        result_report();
 
       }
       else if(State_Run == 4) { //Reset
@@ -813,6 +821,9 @@ void timer_RUN() {
 
     //คำนวนค่า mean
     meanValue();
+
+    //วิเคราะห์ผล
+    result_report();
 
     last_time = millis();  //เซฟเวลาปัจจุบันไว้เพื่อรอจนกว่า millis() จะมากกว่าตัวมันเท่า period
   }
@@ -938,7 +949,7 @@ void runInstrument(){
 }
 
 void result_report(){
-  if (currentIndex > 20 && currentIndex <= timeRUN) {
+  if (currentIndex > 25 && currentIndex <= timeRUN) {
     if (NM515 >= CT_value ){
       report_result = "Positive";
     } else{
